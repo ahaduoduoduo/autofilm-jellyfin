@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Emby.Server.Implementations.Library;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -126,6 +127,7 @@ namespace Emby.Server.Implementations.IO
                 .Where(IsLibraryMonitorEnabled)
                 .OfType<Folder>()
                 .SelectMany(f => f.PhysicalLocations)
+                .Where(path => !AutoFilmRemotePath.IsRemote(path))
                 .Distinct()
                 .Order();
 
@@ -215,6 +217,11 @@ namespace Emby.Server.Implementations.IO
         /// <param name="path">The path.</param>
         private void StartWatchingPath(string path)
         {
+            if (AutoFilmRemotePath.IsRemote(path))
+            {
+                return;
+            }
+
             if (!Directory.Exists(path))
             {
                 // Seeing a crash in the mono runtime due to an exception being thrown on a different thread

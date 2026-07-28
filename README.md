@@ -48,6 +48,43 @@ Check out our <a href="https://translate.jellyfin.org">Weblate instance</a> to h
 
 ---
 
+## AutoFilm remote media fork
+
+This fork stores remote media and external subtitle paths directly as
+`openlist:///...` in Jellyfin's existing database. It keeps item IDs, metadata,
+users, playback history, provider IDs, and existing media streams; no shadow
+catalog or OpenList object identifier is stored.
+
+Video and remote subtitle requests return signed OpenList redirects. New media
+uses Jellyfin's normal resolvers and metadata providers, then enters a
+rate-limited, single-concurrency probe queue. Migrated media is not probed.
+OpenList actively delivers durable path events; Jellyfin does not poll.
+
+The fork also provides local-only batch path migration, remote-first subtitle
+reads, read-only legacy fallback with lazy upload, stale subtitle removal, and
+path-based remote deletion before the Jellyfin item is removed.
+
+Media library sources can be `Local` or `OpenList`. OpenList roots are stored
+as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;
+standard filesystem scans and realtime watchers do not enumerate them.
+OpenList events and explicit `RemoteRefresh` requests are the only mechanisms
+that discover remote objects. External `.sup` streams are reported directly as
+externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
+while local external SUP files are returned unchanged with HTTP range support.
+Playback and subtitle URL rewriting no longer requires an Nginx compatibility
+layer.
+
+`Dockerfile.autofilm` builds both this server and the
+`ahaduoduoduo/autofilm-jellyfin-web` source tree. The resulting image serves
+the compiled AutoFilm web client from `/autofilm-jellyfin-web`; it does not use
+the precompiled web assets inherited from the runtime base image. The web
+client lets administrators select Local or OpenList for each new library path
+and browse OpenList directories through Jellyfin's authenticated API.
+
+See [docs/autofilm-remote-media.md](docs/autofilm-remote-media.md) for
+configuration and safety rules, [DETAILS.md](DETAILS.md) for the module map, and
+[TODO.md](TODO.md) for current implementation status.
+
 ## Jellyfin Server
 
 This repository contains the code for Jellyfin's backend server. Note that this is only one of many projects under the Jellyfin GitHub [organization](https://github.com/jellyfin/) on GitHub. If you want to contribute, you can start by checking out our [documentation](https://jellyfin.org/docs/general/contributing/index.html) to see what to work on.

@@ -1,0 +1,40 @@
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace MediaBrowser.Controller.AutoFilm;
+
+/// <summary>
+/// Requests a precise path-based refresh from AutoFilm Core or OpenList.
+/// </summary>
+public sealed record AutoFilmRemoteRefreshRequest
+{
+    /// <summary>
+    /// Gets the OpenList absolute path, OpenList URI, or legacy Jellyfin path.
+    /// </summary>
+    [JsonPropertyName("path")]
+    public string Path { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets a value indicating whether OpenList should refresh provider data.
+    /// </summary>
+    [JsonPropertyName("refresh")]
+    public bool Refresh { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether a target directory is loaded recursively.
+    /// </summary>
+    [JsonPropertyName("recursive")]
+    public bool Recursive { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether existing stream data should be reprobed.
+    /// </summary>
+    [JsonPropertyName("force_probe")]
+    public bool ForceProbe { get; init; }
+
+    /// <summary>
+    /// Gets optional metadata provider identifiers such as Tmdb or Imdb.
+    /// </summary>
+    [JsonPropertyName("provider_ids")]
+    public IReadOnlyDictionary<string, string>? ProviderIds { get; init; }
+}

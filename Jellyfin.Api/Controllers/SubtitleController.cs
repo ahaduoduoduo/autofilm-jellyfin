@@ -16,6 +16,7 @@ using Jellyfin.Api.Helpers;
 using Jellyfin.Api.Models.SubtitleDtos;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -48,6 +49,7 @@ public class SubtitleController : BaseJellyfinApiController
     private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SubtitleController> _logger;
+    private readonly IAutoFilmSubtitleService _autoFilmSubtitleService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SubtitleController"/> class.
@@ -60,6 +62,7 @@ public class SubtitleController : BaseJellyfinApiController
     /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
     /// <param name="logger">Instance of <see cref="ILogger{SubtitleController}"/> interface.</param>
+    /// <param name="autoFilmSubtitleService">AutoFilm external subtitle resolver.</param>
     public SubtitleController(
         IServerConfigurationManager serverConfigurationManager,
         ILibraryManager libraryManager,
@@ -68,7 +71,8 @@ public class SubtitleController : BaseJellyfinApiController
         IMediaSourceManager mediaSourceManager,
         IProviderManager providerManager,
         IFileSystem fileSystem,
-        ILogger<SubtitleController> logger)
+        ILogger<SubtitleController> logger,
+        IAutoFilmSubtitleService autoFilmSubtitleService)
     {
         _serverConfigurationManager = serverConfigurationManager;
         _libraryManager = libraryManager;
@@ -78,6 +82,7 @@ public class SubtitleController : BaseJellyfinApiController
         _providerManager = providerManager;
         _fileSystem = fileSystem;
         _logger = logger;
+        _autoFilmSubtitleService = autoFilmSubtitleService;
     }
 
     /// <summary>
@@ -100,6 +105,14 @@ public class SubtitleController : BaseJellyfinApiController
         if (item is null)
         {
             return NotFound();
+        }
+
+        if (await _autoFilmSubtitleService.DeleteAsync(
+                itemId,
+                index,
+                HttpContext.RequestAborted).ConfigureAwait(false))
+        {
+            return NoContent();
         }
 
         await _subtitleManager.DeleteSubtitles(item, index).ConfigureAwait(false);
@@ -227,6 +240,30 @@ public class SubtitleController : BaseJellyfinApiController
         mediaSourceId ??= routeMediaSourceId;
         index ??= routeIndex;
         format ??= routeFormat;
+
+        var autoFilmSubtitle = await _autoFilmSubtitleService.ResolveAsync(
+            itemId.Value,
+            index.Value,
+            format,
+            HttpContext.RequestAborted).ConfigureAwait(false);
+        if (autoFilmSubtitle?.RemoteUri is not null)
+        {
+            return Redirect(autoFilmSubtitle.RemoteUri.ToString());
+        }
+
+        if (autoFilmSubtitle?.LocalPath is not null)
+        {
+            var result = PhysicalFile(
+                autoFilmSubtitle.LocalPath,
+                MimeTypes.GetMimeType(autoFilmSubtitle.LocalPath));
+            result.EnableRangeProcessing = true;
+            return result;
+        }
+
+        if (autoFilmSubtitle?.RecordRemoved == true)
+        {
+            return NotFound();
+        }
 
         if (string.Equals(format, "js", StringComparison.OrdinalIgnoreCase))
         {
@@ -429,6 +466,19 @@ public class SubtitleController : BaseJellyfinApiController
         if (item is null)
         {
             return NotFound();
+        }
+
+        var autoFilmUpload = await _autoFilmSubtitleService.UploadAsync(
+            itemId,
+            body.Format,
+            body.Language,
+            body.IsForced,
+            body.IsHearingImpaired,
+            Convert.FromBase64String(body.Data),
+            HttpContext.RequestAborted).ConfigureAwait(false);
+        if (autoFilmUpload is not null)
+        {
+            return NoContent();
         }
 
         var bytes = Encoding.UTF8.GetBytes(body.Data);

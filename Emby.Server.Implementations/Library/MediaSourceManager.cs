@@ -22,6 +22,7 @@ using Jellyfin.Extensions.Json;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.IO;
@@ -105,6 +106,7 @@ namespace Emby.Server.Implementations.Library
 
             foreach (var stream in list)
             {
+                AutoFilmSubtitleCompatibility.NormalizeExternalSup(stream);
                 stream.SupportsExternalStream = StreamSupportsExternalStream(stream);
             }
 
@@ -180,7 +182,9 @@ namespace Emby.Server.Implementations.Library
             ResolveSymlinkPaths(mediaSources, enablePathSubstitution);
 
             // If file is strm or main media stream is missing, force a metadata refresh with remote probing
-            if (allowMediaProbe && mediaSources[0].Type != MediaSourceType.Placeholder
+            if (allowMediaProbe
+                && !AutoFilmRemotePath.IsRemote(item.Path)
+                && mediaSources[0].Type != MediaSourceType.Placeholder
                 && (item.Path.EndsWith(".strm", StringComparison.OrdinalIgnoreCase)
                     || (item.MediaType == MediaType.Video && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Video))
                     || (item.MediaType == MediaType.Audio && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Audio))))
@@ -197,11 +201,20 @@ namespace Emby.Server.Implementations.Library
                 ResolveSymlinkPaths(mediaSources, enablePathSubstitution);
             }
 
-            var dynamicMediaSources = await GetDynamicMediaSources(item, cancellationToken).ConfigureAwait(false);
+            var dynamicMediaSources = (await GetDynamicMediaSources(item, cancellationToken)
+                    .ConfigureAwait(false))
+                .ToArray();
+            var hasAutoFilmSource = dynamicMediaSources.Any(
+                source => source.Id?.StartsWith(
+                    AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
+                    StringComparison.Ordinal) == true);
 
             var list = new List<MediaSourceInfo>();
 
-            list.AddRange(mediaSources);
+            if (!hasAutoFilmSource)
+            {
+                list.AddRange(mediaSources);
+            }
 
             foreach (var source in dynamicMediaSources)
             {
@@ -224,6 +237,16 @@ namespace Emby.Server.Implementations.Library
                         source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding);
                         source.SupportsDirectStream = user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
                     }
+                }
+
+                if (source.Id?.StartsWith(
+                        AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
+                        StringComparison.Ordinal) == true)
+                {
+                    source.SupportsDirectPlay = true;
+                    source.SupportsDirectStream = false;
+                    source.SupportsTranscoding = false;
+                    source.SupportsProbing = false;
                 }
 
                 list.Add(source);

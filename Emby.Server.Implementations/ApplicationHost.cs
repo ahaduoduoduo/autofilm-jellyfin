@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Emby.Naming.Common;
 using Emby.Naming.Video;
 using Emby.Photos;
+using Emby.Server.Implementations.AutoFilm;
 using Emby.Server.Implementations.Chapters;
 using Emby.Server.Implementations.Collections;
 using Emby.Server.Implementations.Configuration;
@@ -56,6 +57,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Common.Updates;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Chapters;
 using MediaBrowser.Controller.ClientEvent;
@@ -595,6 +597,19 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<ITVSeriesManager, TVSeriesManager>();
 
             serviceCollection.AddSingleton<IMediaSourceManager, MediaSourceManager>();
+            serviceCollection.AddSingleton<AutoFilmOptions>();
+            serviceCollection.AddSingleton<IAutoFilmOpenListClient, AutoFilmOpenListClient>();
+            serviceCollection.AddSingleton<IAutoFilmMigrationService, AutoFilmMigrationService>();
+            serviceCollection.AddSingleton<IAutoFilmRemoteLibraryRoots, AutoFilmRemoteLibraryRoots>();
+            serviceCollection.AddSingleton<IAutoFilmSubtitleService, AutoFilmSubtitleService>();
+            serviceCollection.AddSingleton<IAutoFilmRemoteRefreshService, AutoFilmRemoteRefreshService>();
+            serviceCollection.AddSingleton<IAutoFilmPathEventService, AutoFilmPathEventService>();
+            serviceCollection.AddSingleton<IAutoFilmInboundEventAuthorizer, AutoFilmInboundEventAuthorizer>();
+            serviceCollection.AddSingleton<AutoFilmRemoteProbeQueue>();
+            serviceCollection.AddSingleton<IAutoFilmRemoteProbeQueue>(
+                provider => provider.GetRequiredService<AutoFilmRemoteProbeQueue>());
+            serviceCollection.AddHostedService(
+                provider => provider.GetRequiredService<AutoFilmRemoteProbeQueue>());
 
             serviceCollection.AddSingleton<ISubtitleManager, SubtitleManager>();
             serviceCollection.AddSingleton<ILyricManager, LyricManager>();
