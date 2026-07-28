@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.IO;
 using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
@@ -184,6 +185,11 @@ namespace Emby.Server.Implementations.IO
         /// <see cref="FileSystemMetadata.IsDirectory"/> property will be set to true and all other properties will reflect the properties of the directory.</remarks>
         public virtual FileSystemMetadata GetFileSystemInfo(string path)
         {
+            if (TryGetRemoteDirectoryInfo(path, out var remote))
+            {
+                return remote;
+            }
+
             // Take a guess to try and avoid two file system hits, but we'll double-check by calling Exists
             if (Path.HasExtension(path))
             {
@@ -234,9 +240,41 @@ namespace Emby.Server.Implementations.IO
         /// <para>For automatic handling of files <b>and</b> directories, use <see cref="GetFileSystemInfo"/>.</para></remarks>
         public virtual FileSystemMetadata GetDirectoryInfo(string path)
         {
+            if (TryGetRemoteDirectoryInfo(path, out var remote))
+            {
+                return remote;
+            }
+
             var fileInfo = new DirectoryInfo(path);
 
             return GetFileSystemMetadata(fileInfo);
+        }
+
+        private static bool TryGetRemoteDirectoryInfo(
+            string path,
+            out FileSystemMetadata metadata)
+        {
+            metadata = null!;
+            if (!AutoFilmRemotePath.TryGetOpenListPath(path, out var openListPath))
+            {
+                return false;
+            }
+
+            var separator = openListPath.LastIndexOf('/');
+            var name = openListPath == "/"
+                ? "OpenList"
+                : openListPath[(separator + 1)..];
+            metadata = new FileSystemMetadata
+            {
+                Exists = true,
+                FullName = AutoFilmRemotePath.FromOpenListPath(openListPath),
+                Name = name,
+                Extension = string.Empty,
+                IsDirectory = true,
+                CreationTimeUtc = DateTime.UnixEpoch,
+                LastWriteTimeUtc = DateTime.UnixEpoch
+            };
+            return true;
         }
 
         private FileSystemMetadata GetFileSystemMetadata(FileSystemInfo info)
@@ -699,7 +737,7 @@ namespace Emby.Server.Implementations.IO
         /// <inheritdoc />
         public virtual bool DirectoryExists(string path)
         {
-            return Directory.Exists(path);
+            return AutoFilmRemotePath.IsRemote(path) || Directory.Exists(path);
         }
 
         /// <inheritdoc />

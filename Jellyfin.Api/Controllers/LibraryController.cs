@@ -17,6 +17,7 @@ using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Common.Extensions;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
@@ -58,6 +59,7 @@ public class LibraryController : BaseJellyfinApiController
     private readonly ILibraryMonitor _libraryMonitor;
     private readonly ILogger<LibraryController> _logger;
     private readonly IServerConfigurationManager _serverConfigurationManager;
+    private readonly IAutoFilmOpenListClient _autoFilmOpenListClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LibraryController"/> class.
@@ -73,6 +75,7 @@ public class LibraryController : BaseJellyfinApiController
     /// <param name="libraryMonitor">Instance of the <see cref="ILibraryMonitor"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{LibraryController}"/> interface.</param>
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
+    /// <param name="autoFilmOpenListClient">AutoFilm OpenList client.</param>
     public LibraryController(
         IProviderManager providerManager,
         ISimilarItemsManager similarItemsManager,
@@ -84,7 +87,8 @@ public class LibraryController : BaseJellyfinApiController
         ILocalizationManager localization,
         ILibraryMonitor libraryMonitor,
         ILogger<LibraryController> logger,
-        IServerConfigurationManager serverConfigurationManager)
+        IServerConfigurationManager serverConfigurationManager,
+        IAutoFilmOpenListClient autoFilmOpenListClient)
     {
         _providerManager = providerManager;
         _similarItemsManager = similarItemsManager;
@@ -97,6 +101,7 @@ public class LibraryController : BaseJellyfinApiController
         _libraryMonitor = libraryMonitor;
         _logger = logger;
         _serverConfigurationManager = serverConfigurationManager;
+        _autoFilmOpenListClient = autoFilmOpenListClient;
     }
 
     /// <summary>
@@ -364,7 +369,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult DeleteItem(Guid itemId)
+    public async Task<ActionResult> DeleteItem(Guid itemId)
     {
         var userId = User.GetUserId();
         var isApiKey = User.GetIsApiKey();
@@ -388,9 +393,32 @@ public class LibraryController : BaseJellyfinApiController
             return Unauthorized("Unauthorized access");
         }
 
+        var isAutoFilmItem = AutoFilmRemotePath.TryGetOpenListPath(
+            item.Path,
+            out var remotePath);
+        if (isAutoFilmItem)
+        {
+            try
+            {
+                await _autoFilmOpenListClient.DeletePathAsync(
+                    remotePath,
+                    HttpContext.RequestAborted).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "AutoFilm remote deletion failed for {ItemId}",
+                    item.Id);
+                return StatusCode(
+                    StatusCodes.Status502BadGateway,
+                    "Remote media deletion failed; the Jellyfin item was preserved.");
+            }
+        }
+
         _libraryManager.DeleteItem(
             item,
-            new DeleteOptions { DeleteFileLocation = true },
+            new DeleteOptions { DeleteFileLocation = !isAutoFilmItem },
             true);
 
         return NoContent();
@@ -408,7 +436,7 @@ public class LibraryController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult DeleteItems([FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] Guid[] ids)
+    public async Task<ActionResult> DeleteItems([FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] Guid[] ids)
     {
         var isApiKey = User.GetIsApiKey();
         var userId = User.GetUserId();
@@ -421,6 +449,7 @@ public class LibraryController : BaseJellyfinApiController
             return Unauthorized("Unauthorized access");
         }
 
+        var items = new List<BaseItem>(ids.Length);
         foreach (var i in ids)
         {
             var item = _libraryManager.GetItemById<BaseItem>(i, user);
@@ -434,9 +463,37 @@ public class LibraryController : BaseJellyfinApiController
                 return Unauthorized("Unauthorized access");
             }
 
+            items.Add(item);
+        }
+
+        foreach (var item in items)
+        {
+            var isAutoFilmItem = AutoFilmRemotePath.TryGetOpenListPath(
+                item.Path,
+                out var remotePath);
+            if (isAutoFilmItem)
+            {
+                try
+                {
+                    await _autoFilmOpenListClient.DeletePathAsync(
+                        remotePath,
+                        HttpContext.RequestAborted).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "AutoFilm remote deletion failed for {ItemId}",
+                        item.Id);
+                    return StatusCode(
+                        StatusCodes.Status502BadGateway,
+                        "Remote media deletion failed; remaining Jellyfin items were preserved.");
+                }
+            }
+
             _libraryManager.DeleteItem(
                 item,
-                new DeleteOptions { DeleteFileLocation = true },
+                new DeleteOptions { DeleteFileLocation = !isAutoFilmItem },
                 true);
         }
 

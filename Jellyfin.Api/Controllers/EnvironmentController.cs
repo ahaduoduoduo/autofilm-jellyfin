@@ -6,6 +6,7 @@ using System.Linq;
 using Jellyfin.Api.Models.EnvironmentDtos;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Common.Extensions;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Model.IO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -78,6 +79,11 @@ public class EnvironmentController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult ValidatePath([FromBody, Required] ValidatePathDto validatePathDto)
     {
+        if (AutoFilmRemotePath.IsRemote(validatePathDto.Path))
+        {
+            return NoContent();
+        }
+
         if (validatePathDto.IsFile.HasValue)
         {
             if (validatePathDto.IsFile.Value)

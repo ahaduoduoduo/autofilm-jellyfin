@@ -14,6 +14,7 @@ using Jellyfin.Extensions;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -47,6 +48,7 @@ public class VideosController : BaseJellyfinApiController
     private readonly ITranscodeManager _transcodeManager;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EncodingHelper _encodingHelper;
+    private readonly IAutoFilmOpenListClient _autoFilmOpenListClient;
 
     private readonly TranscodingJobType _transcodingJobType = TranscodingJobType.Progressive;
 
@@ -62,6 +64,7 @@ public class VideosController : BaseJellyfinApiController
     /// <param name="transcodeManager">Instance of the <see cref="ITranscodeManager"/> interface.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
+    /// <param name="autoFilmOpenListClient">AutoFilm OpenList client.</param>
     public VideosController(
         ILibraryManager libraryManager,
         IUserManager userManager,
@@ -71,7 +74,8 @@ public class VideosController : BaseJellyfinApiController
         IMediaEncoder mediaEncoder,
         ITranscodeManager transcodeManager,
         IHttpClientFactory httpClientFactory,
-        EncodingHelper encodingHelper)
+        EncodingHelper encodingHelper,
+        IAutoFilmOpenListClient autoFilmOpenListClient)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
@@ -82,6 +86,7 @@ public class VideosController : BaseJellyfinApiController
         _transcodeManager = transcodeManager;
         _httpClientFactory = httpClientFactory;
         _encodingHelper = encodingHelper;
+        _autoFilmOpenListClient = autoFilmOpenListClient;
     }
 
     /// <summary>
@@ -369,6 +374,23 @@ public class VideosController : BaseJellyfinApiController
         [FromQuery] bool enableAudioVbrEncoding = true)
     {
         var isHeadRequest = Request.Method == System.Net.WebRequestMethods.Http.Head;
+        var autoFilmItem = _libraryManager.GetItemById<BaseItem>(itemId);
+        if (autoFilmItem is not null
+            && AutoFilmRemotePath.TryGetOpenListPath(
+                autoFilmItem.Path,
+                out var autoFilmPath))
+        {
+            var remoteObject = await _autoFilmOpenListClient.GetObjectAsync(
+                autoFilmPath,
+                HttpContext.RequestAborted).ConfigureAwait(false);
+            if (remoteObject is null || remoteObject.IsDirectory)
+            {
+                return NotFound();
+            }
+
+            return Redirect(_autoFilmOpenListClient.GetDownloadUri(remoteObject).ToString());
+        }
+
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
         var streamingRequest = new VideoRequestDto

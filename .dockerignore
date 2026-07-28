@@ -1,4 +1,6 @@
 .git
+**/bin
+**/obj
 .dockerignore
 Dockerfile
 Dockerfile.arm

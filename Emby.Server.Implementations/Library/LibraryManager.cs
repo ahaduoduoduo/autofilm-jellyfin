@@ -26,6 +26,7 @@ using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
@@ -3510,7 +3511,12 @@ namespace Emby.Server.Implementations.Library
             var mediaPathInfos = options.PathInfos;
             if (mediaPathInfos is not null)
             {
-                var invalidpath = mediaPathInfos.FirstOrDefault(i => !Directory.Exists(i.Path));
+                foreach (var mediaPathInfo in mediaPathInfos)
+                {
+                    AutoFilmRemotePath.NormalizeMediaPath(mediaPathInfo);
+                }
+
+                var invalidpath = mediaPathInfos.FirstOrDefault(i => !IsMediaPathAvailable(i.Path));
                 if (invalidpath is not null)
                 {
                     throw new ArgumentException("The specified path does not exist: " + invalidpath.Path + ".");
@@ -3649,6 +3655,7 @@ namespace Emby.Server.Implementations.Library
         private void AddMediaPathInternal(string virtualFolderName, MediaPathInfo pathInfo, bool saveLibraryOptions)
         {
             ArgumentNullException.ThrowIfNull(pathInfo);
+            AutoFilmRemotePath.NormalizeMediaPath(pathInfo);
 
             var path = pathInfo.Path;
 
@@ -3657,7 +3664,7 @@ namespace Emby.Server.Implementations.Library
                 throw new ArgumentException(nameof(path));
             }
 
-            if (!Directory.Exists(path))
+            if (!IsMediaPathAvailable(path))
             {
                 throw new FileNotFoundException("The path does not exist.");
             }
@@ -3677,6 +3684,11 @@ namespace Emby.Server.Implementations.Library
 
                 CollectionFolder.SaveLibraryOptions(virtualFolderPath, libraryOptions);
             }
+        }
+
+        private static bool IsMediaPathAvailable(string path)
+        {
+            return AutoFilmRemotePath.IsRemote(path) || Directory.Exists(path);
         }
 
         public void UpdateMediaPath(string virtualFolderName, MediaPathInfo mediaPath)
