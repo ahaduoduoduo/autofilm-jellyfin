@@ -1,6 +1,6 @@
 # AutoFilm development status
 
-Updated: 2026-07-29
+Updated: 2026-07-30
 
 ## Completed
 
@@ -37,6 +37,12 @@ Updated: 2026-07-29
   HTTP range support instead of invoking Jellyfin's subtitle encoder.
 - [x] 2026-07-28: Build the forked jellyfin-web source and package it with the
   modified server in one runtime image.
+- [x] 2026-07-30: Use Jellyfin's standard subtitle upload and delete endpoints
+  as the single interface for both local and OpenList media.
+- [x] 2026-07-30: Give OpenList subtitle uploads the same numbered-name
+  collision behavior as Jellyfin local subtitle uploads.
+- [x] 2026-07-30: Add a focused remote subtitle upload test covering numbered
+  names and immediate media-stream insertion.
 
 ## Planned
 

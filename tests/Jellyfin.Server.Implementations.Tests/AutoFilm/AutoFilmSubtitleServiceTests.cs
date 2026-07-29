@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Emby.Server.Implementations.AutoFilm;
 using MediaBrowser.Controller.AutoFilm;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Model.Entities;
@@ -14,6 +18,81 @@ namespace Jellyfin.Server.Implementations.Tests.AutoFilm;
 
 public sealed class AutoFilmSubtitleServiceTests
 {
+    [Fact]
+    public async Task UploadAsync_RemoteNameExists_UsesJellyfinNumberedName()
+    {
+        var itemId = Guid.NewGuid();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var movie = new Movie
+        {
+            Id = itemId,
+            Name = "Movie",
+            Path = "openlist:///media/Movie.mkv"
+        };
+        var library = new Mock<ILibraryManager>();
+        library
+            .Setup(instance => instance.GetItemById<BaseItem>(itemId))
+            .Returns(movie);
+        var repository = new Mock<IMediaStreamRepository>();
+        repository
+            .Setup(instance => instance.GetMediaStreams(
+                It.Is<MediaStreamQuery>(query => query.ItemId.Equals(itemId))))
+            .Returns([]);
+        string? uploadedPath = null;
+        var openListClient = new Mock<IAutoFilmOpenListClient>();
+        openListClient
+            .Setup(instance => instance.GetObjectAsync(
+                It.IsAny<string>(),
+                cancellationToken))
+            .ReturnsAsync((string path, CancellationToken _) =>
+                path == "/media/Movie.zh.ass" || path == uploadedPath
+                    ? new AutoFilmOpenListObject
+                    {
+                        Path = path,
+                        Name = Path.GetFileName(path),
+                        DownloadPath = "/d/" + Path.GetFileName(path)
+                    }
+                    : null);
+        openListClient
+            .Setup(instance => instance.UploadContentAsync(
+                It.IsAny<string>(),
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                cancellationToken))
+            .Callback((string path, ReadOnlyMemory<byte> _, CancellationToken _) =>
+                uploadedPath = path)
+            .Returns(Task.CompletedTask);
+        openListClient
+            .Setup(instance => instance.GetDownloadUri(
+                It.IsAny<AutoFilmOpenListObject>()))
+            .Returns(new Uri("https://openlist.example/d/subtitle"));
+        using var service = new AutoFilmSubtitleService(
+            openListClient.Object,
+            library.Object,
+            repository.Object,
+            new AutoFilmOptions(),
+            NullLogger<AutoFilmSubtitleService>.Instance);
+
+        var result = await service.UploadAsync(
+            itemId,
+            "ass",
+            "zh",
+            false,
+            false,
+            "subtitle"u8.ToArray(),
+            cancellationToken);
+
+        Assert.NotNull(result);
+        Assert.Equal("/media/Movie.zh.0.ass", uploadedPath);
+        repository.Verify(
+            instance => instance.SaveMediaStreams(
+                itemId,
+                It.Is<IReadOnlyList<MediaStream>>(streams =>
+                    streams.Count == 1
+                    && streams[0].Path == "openlist:///media/Movie.zh.0.ass"),
+                cancellationToken),
+            Times.Once);
+    }
+
     [Theory]
     [InlineData("sup")]
     [InlineData("pgssub")]

@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-07-29
+Updated: 2026-07-30
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
@@ -33,8 +33,9 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`
-  - Remote-first resolution, local fallback, lazy migration, new remote upload,
-    stale stream removal, and remote deletion.
+  - Remote-first resolution, local fallback, lazy migration, numbered new
+    remote uploads, immediate stream insertion, stale stream removal, and
+    remote deletion.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaSourceProvider.cs`
   - Dynamic HTTP direct-play source using existing Jellyfin media streams.
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`

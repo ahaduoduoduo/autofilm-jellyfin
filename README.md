@@ -63,7 +63,10 @@ Jellyfin does not poll.
 
 The fork also provides local-only batch path migration, remote-first subtitle
 reads, read-only legacy fallback with lazy upload, stale subtitle removal, and
-path-based remote deletion before the Jellyfin item is removed.
+path-based remote deletion before the Jellyfin item is removed. Jellyfin's
+standard subtitle API is the common entry point for local and OpenList media;
+remote uploads use the same language naming and numbered collision behavior as
+local uploads and update the item's external subtitle streams immediately.
 
 Media library sources can be `Local` or `OpenList`. OpenList roots are stored
 as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;

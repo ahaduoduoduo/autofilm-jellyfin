@@ -1,6 +1,6 @@
 # AutoFilm remote media behavior
 
-Updated: 2026-07-28
+Updated: 2026-07-30
 
 ## Persistent model
 
@@ -136,8 +136,16 @@ For an external `openlist:///` subtitle:
 4. If both sources are absent, remove the stale stream record.
 5. Authentication, network, or provider failures never remove the record.
 
-New Jellyfin subtitle uploads are written to OpenList first and then added to
-`MediaStreamInfos`.
+New Jellyfin subtitle uploads use the standard `/Videos/{id}/Subtitles`
+endpoint. Local items continue through Jellyfin's normal media-folder or
+metadata-folder save path. Remote items are written to OpenList first and then
+added to `MediaStreamInfos`. If the language filename already exists, remote
+uploads use Jellyfin-compatible numbered names such as `.zh.0.ass`.
+
+The standard subtitle delete endpoint removes local subtitles through
+Jellyfin's subtitle manager and removes remote subtitles through OpenList.
+AutoFilm Core therefore does not write, rename, or delete subtitle paths
+directly and does not request a directory refresh after subtitle operations.
 
 External `.sup` streams are returned in item and PlaybackInfo media streams as:
 
