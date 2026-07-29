@@ -1,6 +1,6 @@
 # AutoFilm development status
 
-Updated: 2026-07-28
+Updated: 2026-07-29
 
 ## Completed
 
@@ -14,15 +14,14 @@ Updated: 2026-07-28
 - [x] 2026-07-28: Add OpenList subtitle reads and stale stream removal.
 - [x] 2026-07-28: Store new subtitle uploads directly in OpenList.
 - [x] 2026-07-28: Delete OpenList paths before removing Jellyfin items.
-- [x] 2026-07-28: Receive token-protected active OpenList path events.
-- [x] 2026-07-28: Update paths in place for move events and preserve item IDs.
+- [x] 2026-07-29: Remove automatic OpenList path-event handling. Remote media
+  enters Jellyfin only through an explicit `RemoteRefresh`.
 - [x] 2026-07-28: Build and run the self-contained DSM test image.
 - [x] 2026-07-28: Store remote media library roots as `openlist:///` in
   `PathInfos` and `.mblink` files while preserving local libraries.
 - [x] 2026-07-28: Add Local/OpenList library source typing and an authenticated
   OpenList directory browser endpoint.
-- [x] 2026-07-28: Restrict remote refresh and OpenList events to configured
-  remote library roots.
+- [x] 2026-07-28: Restrict remote refresh to configured remote library roots.
 - [x] 2026-07-28: Normalize external SUP streams in PlaybackInfo and serve
   them through Jellyfin's own subtitle endpoint.
 - [x] 2026-07-28: Return real local-library external SUP files unchanged with
@@ -37,7 +36,7 @@ Updated: 2026-07-28
 ## Planned
 
 - [ ] Add focused unit tests for root path mapping, subtitle state transitions,
-  event idempotency, and delete failure handling.
+  and delete failure handling.
 - [x] 2026-07-28: Add a dedicated Local/OpenList source picker and authenticated
   OpenList directory browser to `autofilm-jellyfin-web`.
 - [ ] Verify Infuse seeking, playback reporting, deletion, and SUP/PGS behavior

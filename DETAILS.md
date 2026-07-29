@@ -1,12 +1,12 @@
 # AutoFilm module map
 
-Updated: 2026-07-28
+Updated: 2026-07-29
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
 
 - `MediaBrowser.Controller/AutoFilm/`
-  - Provider-neutral remote path, refresh, event, subtitle, and probe
+  - Provider-neutral remote path, refresh, subtitle, and probe
     interfaces.
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
@@ -14,8 +14,8 @@ responsibility:
 - `MediaBrowser.Model/Configuration/MediaPathSourceType.cs`
   - Distinguishes normal host paths from OpenList media library sources.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOptions.cs`
-  - Environment configuration for OpenList access, inbound events, refresh
-    limits, and media probe intervals.
+  - Environment configuration for OpenList access, refresh limits, and media
+    probe intervals.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteLibraryRoots.cs`
   - Reads OpenList roots from Jellyfin's normal virtual-folder configuration.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOpenListClient.cs`
@@ -28,8 +28,6 @@ responsibility:
     and metadata providers.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
-- `Emby.Server.Implementations/AutoFilm/AutoFilmPathEventService.cs`
-  - Applies active upsert, move, and remove events by path.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`
   - OpenList resolution, new remote upload, stale stream removal, remote
     deletion, and raw local SUP delivery.
@@ -37,8 +35,6 @@ responsibility:
   - Dynamic HTTP direct-play source using existing Jellyfin media streams.
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
   - OpenList directory browsing and path-only remote refresh.
-- `Jellyfin.Api/Controllers/AutoFilmEventsController.cs`
-  - Token-protected OpenList event receiver.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`

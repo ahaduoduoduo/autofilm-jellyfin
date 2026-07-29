@@ -57,8 +57,8 @@ catalog or OpenList object identifier is stored.
 
 Video and remote subtitle requests return signed OpenList redirects. New media
 uses Jellyfin's normal resolvers and metadata providers, then enters a
-rate-limited, single-concurrency probe queue. OpenList actively delivers durable
-path events; Jellyfin does not poll.
+rate-limited, single-concurrency probe queue. AutoFilm Core normally sends an
+explicit `RemoteRefresh` after a download; Jellyfin does not poll.
 
 The default branch contains no installation-specific database migration or
 legacy subtitle path fallback. Those compatibility features are isolated in
@@ -69,8 +69,9 @@ path-based remote deletion before the Jellyfin item is removed.
 Media library sources can be `Local` or `OpenList`. OpenList roots are stored
 as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;
 standard filesystem scans and realtime watchers do not enumerate them.
-OpenList events and explicit `RemoteRefresh` requests are the only mechanisms
-that discover remote objects. External `.sup` streams are reported directly as
+Explicit `RemoteRefresh` requests discover remote objects. OpenList file
+mutations do not alter the Jellyfin library automatically. External `.sup`
+streams are reported directly as
 externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
 while local external SUP files are returned unchanged with HTTP range support.
 Playback and subtitle URL rewriting no longer requires an Nginx compatibility
