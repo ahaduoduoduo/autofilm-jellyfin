@@ -1,20 +1,21 @@
 # AutoFilm module map
 
-Updated: 2026-07-28
+Updated: 2026-07-29
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
 
 - `MediaBrowser.Controller/AutoFilm/`
-  - Provider-neutral remote path, migration, refresh, event, subtitle, and
-    probe interfaces.
+  - Provider-neutral remote path, migration, refresh, subtitle, and probe
+    interfaces.
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
   - `AutoFilmSubtitleCompatibility.cs` normalizes external SUP responses.
 - `MediaBrowser.Model/Configuration/MediaPathSourceType.cs`
   - Distinguishes normal host paths from OpenList media library sources.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOptions.cs`
-  - Environment configuration, migration mapping, and legacy subtitle fallback.
+  - Environment configuration for OpenList access, migration mapping, legacy
+    subtitle fallback, refresh limits, and media probe intervals.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmMigrationService.cs`
   - Bounded local migration for items, physical folders, base videos, external
     subtitle streams, media library `PathInfos`, and `.mblink` targets.
@@ -31,8 +32,6 @@ responsibility:
     and metadata providers.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
-- `Emby.Server.Implementations/AutoFilm/AutoFilmPathEventService.cs`
-  - Applies active upsert, move, and remove events by path.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`
   - Remote-first resolution, local fallback, lazy migration, new remote upload,
     stale stream removal, and remote deletion.
@@ -41,8 +40,6 @@ responsibility:
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
   - Migration preview/apply, OpenList directory browsing, and path-only remote
     refresh.
-- `Jellyfin.Api/Controllers/AutoFilmEventsController.cs`
-  - Token-protected OpenList event receiver.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`

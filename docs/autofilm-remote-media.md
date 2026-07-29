@@ -27,7 +27,6 @@ coexist in the same server.
 | `AUTOFILM_OPENLIST_URL` | Container-internal OpenList URL | empty |
 | `AUTOFILM_OPENLIST_PUBLIC_URL` | URL returned to playback clients | internal URL |
 | `AUTOFILM_OPENLIST_TOKEN` | OpenList AutoFilm service token | empty |
-| `AUTOFILM_JELLYFIN_INBOUND_TOKEN` | Token accepted from OpenList events | empty |
 | `AUTOFILM_LEGACY_MEDIA_PREFIX` | Existing Jellyfin path prefix | `/movie/drimnt` |
 | `AUTOFILM_OPENLIST_MEDIA_PREFIX` | Corresponding OpenList prefix | `/` |
 | `AUTOFILM_LEGACY_SUBTITLE_ROOT` | Read-only legacy subtitle mount | `/legacy-subtitles` |
@@ -88,8 +87,8 @@ POST /AutoFilm/OpenList/Browse
 
 OpenList roots receive synthetic directory metadata only for Jellyfin library
 registration. Standard filesystem scans and realtime `FileSystemWatcher`
-instances do not enumerate remote roots. Remote discovery comes from active
-OpenList events, `RemoteRefresh`, or an administrator selecting a remote path.
+instances do not enumerate remote roots. Remote discovery comes from
+`RemoteRefresh` or an administrator selecting a remote path.
 
 ## New remote paths
 
@@ -156,27 +155,12 @@ returned as the original physical file with HTTP range support. Both paths
 bypass the text subtitle encoder and replace the old Nginx PGS/SUP response
 rewriting.
 
-## Events
+## Explicit refresh
 
-```http
-POST /AutoFilm/Events
-X-AutoFilm-Token: ...
-```
-
-Supported types:
-
-- `object.upsert`: refresh or create the path.
-- `object.move`: update the existing item and subtitle paths in place.
-- `object.remove`: delete the Jellyfin record without deleting OpenList again.
-
-Subtitle events are acknowledged without directory refresh because subtitle
-reads and AutoFilm uploads manage their stream records directly.
-
-A move between configured roots preserves the item and reparents it, creating
-missing intermediate Folder records. A move out of all configured roots removes
-the Jellyfin item; a move from outside into a configured root creates it.
-
-Jellyfin does not poll OpenList.
+OpenList uploads, moves, renames, and deletions do not automatically change
+Jellyfin. AutoFilm Core calls `RemoteRefresh` after a completed media download.
+An OpenList administrator may explicitly request the same operation for a
+selected path. Jellyfin does not poll OpenList.
 
 ## Deletion
 

@@ -53,13 +53,6 @@ public sealed class AutoFilmOptions
         ?? "/legacy-subtitles";
 
     /// <summary>
-    /// Gets the token accepted from OpenList event delivery.
-    /// </summary>
-    public string JellyfinInboundToken { get; } =
-        Environment.GetEnvironmentVariable("AUTOFILM_JELLYFIN_INBOUND_TOKEN")
-        ?? string.Empty;
-
-    /// <summary>
     /// Gets the maximum number of remote directories read by one refresh.
     /// </summary>
     public int RemoteRefreshMaxDirectories { get; } = ParseBoundedInteger(
