@@ -64,7 +64,10 @@ The default branch contains no installation-specific database migration or
 legacy subtitle path fallback. Those compatibility features are isolated in
 `codex/personal-legacy-compat`. The default implementation provides remote
 subtitle reads, stale subtitle removal, new remote subtitle uploads, and
-path-based remote deletion before the Jellyfin item is removed.
+path-based remote deletion before the Jellyfin item is removed. Jellyfin's
+standard subtitle API is the common entry point for local and OpenList media;
+remote uploads use the same language naming and numbered collision behavior as
+local uploads and update the item's external subtitle streams immediately.
 
 Media library sources can be `Local` or `OpenList`. OpenList roots are stored
 as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;

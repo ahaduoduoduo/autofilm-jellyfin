@@ -190,13 +190,25 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
             + (isForced ? ".forced" : string.Empty)
             + (isHearingImpaired ? ".sdh" : string.Empty)
             + extension;
-        var remotePath = directory == "/"
+        var baseRemotePath = directory == "/"
             ? "/" + name
             : directory + "/" + name;
+        var remotePath = baseRemotePath;
 
         await _uploadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            var counter = 0;
+            while (await _openListClient.GetObjectAsync(
+                       remotePath,
+                       cancellationToken).ConfigureAwait(false) is not null)
+            {
+                remotePath = Path.ChangeExtension(
+                    baseRemotePath,
+                    $"{counter}.{normalizedFormat}");
+                counter++;
+            }
+
             await _openListClient.UploadContentAsync(
                 remotePath,
                 content,

@@ -1,6 +1,6 @@
 # AutoFilm development status
 
-Updated: 2026-07-29
+Updated: 2026-07-30
 
 ## Completed
 
@@ -32,6 +32,12 @@ Updated: 2026-07-29
   subtitle reverse lookup in `codex/personal-legacy-compat`.
 - [x] 2026-07-28: Keep the default branch free of legacy path configuration,
   migration APIs, and local fallback upload behavior.
+- [x] 2026-07-30: Use Jellyfin's standard subtitle upload and delete endpoints
+  as the single interface for both local and OpenList media.
+- [x] 2026-07-30: Give OpenList subtitle uploads the same numbered-name
+  collision behavior as Jellyfin local subtitle uploads.
+- [x] 2026-07-30: Add a focused remote subtitle upload test covering numbered
+  names and immediate media-stream insertion.
 
 ## Planned
 
