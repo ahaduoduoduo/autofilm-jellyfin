@@ -40,13 +40,6 @@ namespace MediaBrowser.Controller.Entities.TV
         [JsonIgnore]
         public override bool SupportsInheritedParentImages => true;
 
-        public override bool CanDelete()
-        {
-            // Virtual seasons have no path, so this only enables real OpenList
-            // season directories and cannot fall back to deleting the series root.
-            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
-        }
-
         [JsonIgnore]
         public override Guid DisplayParentId => SeriesId;
 
@@ -93,6 +86,13 @@ namespace MediaBrowser.Controller.Entities.TV
 
         [JsonIgnore]
         public Guid SeriesId { get; set; }
+
+        public override bool CanDelete()
+        {
+            // Virtual seasons have no path, so this only enables real OpenList
+            // season directories and cannot fall back to deleting the series root.
+            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
+        }
 
         public override double GetDefaultPrimaryImageAspectRatio()
         {
