@@ -388,7 +388,8 @@ public class VideosController : BaseJellyfinApiController
                 return NotFound();
             }
 
-            return Redirect(_autoFilmOpenListClient.GetDownloadUri(remoteObject).ToString());
+            return Redirect(AutoFilmRedirectHelper.GetLocation(
+                _autoFilmOpenListClient.GetDownloadUri(remoteObject)));
         }
 
         // CTS lifecycle is managed internally.

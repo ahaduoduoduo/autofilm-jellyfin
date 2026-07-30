@@ -41,6 +41,9 @@ responsibility:
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
   - Migration preview/apply, OpenList directory browsing, and path-only remote
     refresh.
+- `Jellyfin.Api/Helpers/AutoFilmRedirectHelper.cs`
+  - Produces ASCII-safe `Location` values for video and remote subtitle 302
+    responses, including paths with non-ASCII names.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`
