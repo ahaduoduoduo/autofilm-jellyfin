@@ -216,6 +216,13 @@ For an external `openlist:///` subtitle:
 2. On explicit remote 404, remove the stale stream record.
 3. Authentication, network, or provider failures never remove the record.
 
+The resolver accepts `.ass`, `.ssa`, `.srt`, `.vtt`, `.sub`, `.idx`, and
+`.sup`. `openlist:///` is an AutoFilm database URI rather than a path understood
+by upstream Jellyfin; `AutoFilmSubtitleService` resolves it before a client
+receives the subtitle response. The remote response serves the original
+subtitle format. A request that asks Jellyfin to convert ASS/SRT to another
+format does not pass the remote source through Jellyfin's subtitle encoder.
+
 Jellyfin's standard `/Videos/{id}/Subtitles` JSON endpoint remains compatible
 with Jellyfin Web, third-party clients, and plugins. AutoFilm Core sends every
 subtitle format to the authenticated
