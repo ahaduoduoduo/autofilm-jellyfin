@@ -193,6 +193,13 @@ Remote item and subtitle deletion calls the OpenList path delete endpoint
 before changing Jellyfin. If OpenList fails, Jellyfin returns an error and
 preserves the local record.
 
+Movie and episode DTOs backed by a valid `openlist:///` path report
+`CanDelete=true` when the current user has Jellyfin media-deletion permission.
+Jellyfin Web therefore exposes its normal **Delete media** action for remote
+videos. The standard confirmation dialog and user library restrictions remain
+in effect. Arbitrary HTTP media, remote library roots, seasons, and series do
+not gain delete capability from this extension.
+
 ## Safety
 
 - Real 115 delete, move, and bulk subtitle upload tests require a dedicated test

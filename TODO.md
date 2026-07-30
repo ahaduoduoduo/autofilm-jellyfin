@@ -4,6 +4,9 @@ Updated: 2026-07-30
 
 ## Completed
 
+- [x] 2026-07-30: Expose Jellyfin Web media deletion for valid
+  `openlist:///` movies and episodes while retaining normal user delete
+  permissions and excluding arbitrary remote URLs and library folders.
 - [x] 2026-07-30: Run the additive descendant importer for newly created remote
   folders so first-time episode, season, and multi-season downloads create
   their contained videos during the same explicit refresh.

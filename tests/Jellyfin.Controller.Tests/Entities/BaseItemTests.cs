@@ -43,6 +43,23 @@ public class BaseItemTests
         => Assert.Equal("The Matrix", BaseItem.GetSortName("  The Matrix", false, new ServerConfiguration()));
 
     [Fact]
+    public void CanDelete_OpenListVideo_ReturnsTrueWithoutEnablingArbitraryRemoteUrls()
+    {
+        var recordingsManager = new Mock<IRecordingsManager>();
+        recordingsManager
+            .Setup(x => x.GetActiveRecordingInfo(It.IsAny<string>()))
+            .Returns((ActiveRecordingInfo?)null);
+        Video.RecordingsManager = recordingsManager.Object;
+
+        var mediaSourceManager = new Mock<IMediaSourceManager>();
+        mediaSourceManager.Setup(x => x.GetPathProtocol(It.IsAny<string>())).Returns(MediaProtocol.Http);
+        BaseItem.MediaSourceManager = mediaSourceManager.Object;
+
+        Assert.True(new Video { Path = "openlist:///115/movie/example.mkv" }.CanDelete());
+        Assert.False(new Video { Path = "https://example.invalid/example.mkv" }.CanDelete());
+    }
+
+    [Fact]
     public void SortName_ForcedSortName_IsCleanedLikeAutoSortName()
     {
         var configManager = new Mock<IServerConfigurationManager>();

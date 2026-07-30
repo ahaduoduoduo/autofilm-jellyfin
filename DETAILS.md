@@ -63,6 +63,10 @@ responsibility:
     formats; both use the same save operation.
 - `Jellyfin.Api/Controllers/LibraryController.cs`
   - OpenList-first item deletion.
+- `MediaBrowser.Controller/Entities/Video.cs`
+  - Reports valid `openlist:///` movies and episodes as deletable so Jellyfin
+    Web can expose its standard delete action while preserving user policy
+    checks.
 - `Emby.Server.Implementations/Library/MediaSourceManager.cs`
   - Prevents local filesystem probing and normalizes external SUP streams.
 - `Emby.Server.Implementations/Library/LibraryManager.cs`

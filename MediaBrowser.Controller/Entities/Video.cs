@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Persistence;
@@ -463,7 +464,7 @@ namespace MediaBrowser.Controller.Entities
                 return false;
             }
 
-            return base.CanDelete();
+            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
         }
 
         public IEnumerable<Guid> GetAdditionalPartIds()
