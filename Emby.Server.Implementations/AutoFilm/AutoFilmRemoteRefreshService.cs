@@ -104,19 +104,23 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     cancellationToken).ConfigureAwait(false);
             }
 
-            ApplyProviderIds(existing, request.ProviderIds);
+            var providerTarget = ResolveProviderTarget(
+                existing,
+                request,
+                load.Snapshot);
+            ApplyProviderIds(providerTarget, request.ProviderIds);
             if (request.ProviderIds is { Count: > 0 })
             {
-                await existing.UpdateToRepositoryAsync(
+                await providerTarget.UpdateToRepositoryAsync(
                     ItemUpdateType.MetadataEdit,
                     cancellationToken).ConfigureAwait(false);
             }
 
-            QueueMetadataRefresh(existing, load.Snapshot);
-            QueueProbe(existing, request.ForceProbe);
+            QueueMetadataRefresh(providerTarget, load.Snapshot);
+            QueueProbe(providerTarget, request.ForceProbe);
             return CreateResult(
                 "refreshed",
-                existing,
+                providerTarget,
                 load,
                 remotePath);
         }
@@ -169,6 +173,10 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 $"Jellyfin did not create an item for '{openListPath}'.");
         }
 
+        resolvedItem = ResolveProviderTarget(
+            resolvedItem,
+            request,
+            load.Snapshot);
         ApplyProviderIds(resolvedItem, request.ProviderIds);
         if (request.ProviderIds is { Count: > 0 })
         {
@@ -442,6 +450,51 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 EnableRemoteContentProbe = false
             },
             RefreshPriority.High);
+    }
+
+    private BaseItem ResolveProviderTarget(
+        BaseItem resolvedItem,
+        AutoFilmRemoteRefreshRequest request,
+        AutoFilmDirectorySnapshot snapshot)
+    {
+        if (!string.Equals(
+                request.ProviderTarget,
+                "movie",
+                StringComparison.OrdinalIgnoreCase)
+            || resolvedItem is not Folder folder)
+        {
+            return resolvedItem;
+        }
+
+        var candidates = snapshot
+            .GetFileSystemEntries(folder.Path)
+            .Where(entry => !entry.IsDirectory)
+            .Select(entry =>
+            {
+                var existing = _libraryManager.FindByPath(
+                    entry.FullName,
+                    false);
+                return (
+                    Item: existing ?? _libraryManager.ResolvePath(
+                        entry,
+                        folder,
+                        snapshot),
+                    Exists: existing is not null);
+            })
+            .Where(candidate => candidate.Item is Video)
+            .ToArray();
+        if (candidates.Length != 1)
+        {
+            return resolvedItem;
+        }
+
+        var candidate = candidates[0];
+        if (!candidate.Exists)
+        {
+            _libraryManager.CreateItem(candidate.Item!, folder);
+        }
+
+        return candidate.Item!;
     }
 
     private void QueueProbe(BaseItem item, bool force)

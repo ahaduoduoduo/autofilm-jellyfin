@@ -4,6 +4,8 @@ Updated: 2026-07-30
 
 ## Completed
 
+- [x] 2026-07-30: Bind movie provider IDs to the single video inside an exact
+  OpenList result directory instead of applying them to the wrapper folder.
 - [x] 2026-07-28: Store item and external subtitle paths as `openlist:///`.
 - [x] 2026-07-28: Return OpenList 302 responses for video and remote subtitles.
 - [x] 2026-07-30: Preserve percent encoding in video and remote subtitle 302
