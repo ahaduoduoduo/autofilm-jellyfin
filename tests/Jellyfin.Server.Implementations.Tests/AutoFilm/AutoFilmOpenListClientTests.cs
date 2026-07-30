@@ -45,8 +45,8 @@ public sealed class AutoFilmOpenListClientTests
                 TestContext.Current.CancellationToken);
 
             Assert.Null(result);
-            Assert.NotNull(handler.RequestBody);
-            using var body = JsonDocument.Parse(handler.RequestBody);
+            var requestBody = Assert.IsType<string>(handler.RequestBody);
+            using var body = JsonDocument.Parse(requestBody);
             Assert.Equal(
                 "/115/movie/completed-download",
                 body.RootElement.GetProperty("path").GetString());
