@@ -56,9 +56,10 @@ public sealed class AutoFilmSubtitleServiceTests
         openListClient
             .Setup(instance => instance.UploadContentAsync(
                 It.IsAny<string>(),
-                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Stream>(),
+                It.IsAny<long?>(),
                 cancellationToken))
-            .Callback((string path, ReadOnlyMemory<byte> _, CancellationToken _) =>
+            .Callback((string path, Stream _, long? _, CancellationToken _) =>
                 uploadedPath = path)
             .Returns(Task.CompletedTask);
         openListClient
@@ -72,13 +73,15 @@ public sealed class AutoFilmSubtitleServiceTests
             new AutoFilmOptions(),
             NullLogger<AutoFilmSubtitleService>.Instance);
 
+        await using var content = new MemoryStream("subtitle"u8.ToArray());
         var result = await service.UploadAsync(
             itemId,
             "ass",
             "zh",
             false,
             false,
-            "subtitle"u8.ToArray(),
+            content,
+            content.Length,
             cancellationToken);
 
         Assert.NotNull(result);

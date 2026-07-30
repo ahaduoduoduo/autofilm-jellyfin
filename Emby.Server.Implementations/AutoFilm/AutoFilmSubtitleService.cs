@@ -170,7 +170,8 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
         string language,
         bool isForced,
         bool isHearingImpaired,
-        ReadOnlyMemory<byte> content,
+        Stream content,
+        long? contentLength,
         CancellationToken cancellationToken)
     {
         var item = _libraryManager.GetItemById<BaseItem>(itemId);
@@ -229,6 +230,7 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
             await _openListClient.UploadContentAsync(
                 remotePath,
                 content,
+                contentLength,
                 cancellationToken).ConfigureAwait(false);
         }
         finally

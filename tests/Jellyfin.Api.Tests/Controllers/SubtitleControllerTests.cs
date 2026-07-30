@@ -8,14 +8,13 @@ namespace Jellyfin.Api.Tests.Controllers;
 public static class SubtitleControllerTests
 {
     [Fact]
-    public static void UploadSubtitle_AllowsLargeGraphicalSubtitleRequests()
+    public static void UploadSubtitleStream_DisablesBufferedRequestLimit()
     {
         var method = typeof(SubtitleController).GetMethod(
-            nameof(SubtitleController.UploadSubtitle));
+            nameof(SubtitleController.UploadSubtitleStream));
         Assert.NotNull(method);
 
-        var attribute = Assert.Single(
-            method.GetCustomAttributes<RequestSizeLimitAttribute>());
-        Assert.Equal(256L * 1024 * 1024, attribute.Bytes);
+        Assert.Single(
+            method.GetCustomAttributes<DisableRequestSizeLimitAttribute>());
     }
 }

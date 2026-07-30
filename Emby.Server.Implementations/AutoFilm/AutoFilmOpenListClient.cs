@@ -128,6 +128,7 @@ public sealed class AutoFilmOpenListClient : IAutoFilmOpenListClient
             64 * 1024,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var content = new StreamContent(file);
+        content.Headers.ContentLength = file.Length;
         await UploadContentAsync(
             remotePath,
             content,
@@ -137,10 +138,12 @@ public sealed class AutoFilmOpenListClient : IAutoFilmOpenListClient
     /// <inheritdoc />
     public async Task UploadContentAsync(
         string remotePath,
-        ReadOnlyMemory<byte> content,
+        Stream content,
+        long? contentLength,
         CancellationToken cancellationToken)
     {
-        using var httpContent = new ReadOnlyMemoryContent(content);
+        using var httpContent = new StreamContent(content);
+        httpContent.Headers.ContentLength = contentLength;
         await UploadContentAsync(
             remotePath,
             httpContent,
@@ -159,6 +162,7 @@ public sealed class AutoFilmOpenListClient : IAutoFilmOpenListClient
         request.Headers.Add("Overwrite", "false");
         request.Content = content;
         var client = _httpClientFactory.CreateClient();
+        client.Timeout = Timeout.InfiniteTimeSpan;
         using var response = await client.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,
