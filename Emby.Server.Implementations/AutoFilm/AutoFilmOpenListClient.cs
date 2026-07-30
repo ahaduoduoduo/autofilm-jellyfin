@@ -53,9 +53,21 @@ public sealed class AutoFilmOpenListClient : IAutoFilmOpenListClient
         string path,
         CancellationToken cancellationToken)
     {
+        return await GetObjectAsync(
+            path,
+            false,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<AutoFilmOpenListObject?> GetObjectAsync(
+        string path,
+        bool refresh,
+        CancellationToken cancellationToken)
+    {
         var response = await PostAsync<AutoFilmOpenListObject>(
             "api/autofilm/objects/get",
-            new { path },
+            new { path, refresh },
             cancellationToken).ConfigureAwait(false);
         return response.Code == 404
             ? null

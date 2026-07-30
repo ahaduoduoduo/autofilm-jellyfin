@@ -19,6 +19,22 @@ public interface IAutoFilmOpenListClient
     Task<AutoFilmOpenListObject?> GetObjectAsync(string path, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Gets one object by path and optionally refreshes its provider-backed
+    /// parent directory first.
+    /// </summary>
+    /// <param name="path">OpenList path.</param>
+    /// <param name="refresh">
+    /// Whether the parent directory should be refreshed before resolving the
+    /// object.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The object, or <see langword="null"/> when it does not exist.</returns>
+    Task<AutoFilmOpenListObject?> GetObjectAsync(
+        string path,
+        bool refresh,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Lists one complete directory.
     /// </summary>
     /// <param name="path">OpenList directory path.</param>

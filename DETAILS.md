@@ -25,6 +25,8 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOpenListClient.cs`
   - Token-authenticated path lookup, listing, upload, delete, public download
     URI, and container-internal download URI.
+  - For precise post-download refreshes, forwards the target-object refresh
+    flag so OpenList reloads the exact parent directory before lookup.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmDirectorySnapshot.cs`
   - In-memory `IDirectoryService` snapshot used by normal Jellyfin resolvers.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`

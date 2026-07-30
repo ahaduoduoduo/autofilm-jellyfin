@@ -250,6 +250,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         {
             var targetObject = await _openListClient.GetObjectAsync(
                 targetPath,
+                refresh,
                 cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException(
                     $"OpenList path '{targetPath}' does not exist.");
@@ -274,6 +275,10 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         {
             var obj = await _openListClient.GetObjectAsync(
                 path,
+                refresh && string.Equals(
+                    path,
+                    targetPath,
+                    StringComparison.Ordinal),
                 cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException(
                     $"OpenList path '{path}' does not exist.");
