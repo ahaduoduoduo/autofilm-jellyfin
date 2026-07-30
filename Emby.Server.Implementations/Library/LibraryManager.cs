@@ -3151,14 +3151,40 @@ namespace Emby.Server.Implementations.Library
             var isFolder = episode.VideoType == VideoType.BluRay || episode.VideoType == VideoType.Dvd;
 
             EpisodeInfo? episodeInfo = null;
-            if (episode.IsFileProtocol)
+            var episodePath = episode.Path;
+            var canResolvePath = episode.IsFileProtocol;
+            if (!canResolvePath
+                && AutoFilmRemotePath.TryGetOpenListPath(
+                    episode.Path,
+                    out var openListEpisodePath))
             {
-                episodeInfo = resolver.Resolve(episode.Path, isFolder, null, null, isAbsoluteNaming);
+                episodePath = openListEpisodePath;
+                canResolvePath = true;
+            }
+
+            if (canResolvePath)
+            {
+                episodeInfo = resolver.Resolve(
+                    episodePath,
+                    isFolder,
+                    null,
+                    null,
+                    isAbsoluteNaming);
                 // Resolve from parent folder if it's not the Season folder
                 var parent = episode.GetParent();
                 if (episodeInfo is null && parent.GetType() == typeof(Folder))
                 {
-                    episodeInfo = resolver.Resolve(parent.Path, true, null, null, isAbsoluteNaming);
+                    var parentPath = AutoFilmRemotePath.TryGetOpenListPath(
+                        parent.Path,
+                        out var openListParentPath)
+                        ? openListParentPath
+                        : parent.Path;
+                    episodeInfo = resolver.Resolve(
+                        parentPath,
+                        true,
+                        null,
+                        null,
+                        isAbsoluteNaming);
                     if (episodeInfo is not null)
                     {
                         // add the container

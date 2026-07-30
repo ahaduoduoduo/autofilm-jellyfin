@@ -89,13 +89,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         if (existing is not null)
         {
-            var importedItems = existing is Folder existingFolder
+            var importResult = existing is Folder existingFolder
                 ? ImportMissingDescendants(
                     existingFolder,
                     load.Snapshot,
                     request.Recursive,
                     cancellationToken)
-                : Array.Empty<BaseItem>();
+                : DescendantImportResult.Empty;
             var destinationParent = parent is null
                 ? null
                 : EnsureParentHierarchy(
@@ -124,7 +124,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             }
 
             QueueMetadataRefresh(providerTarget, load.Snapshot);
-            foreach (var importedVideo in importedItems
+            foreach (var video in importResult.Videos
+                         .Where(video => !video.Id.Equals(providerTarget.Id)))
+            {
+                QueueMetadataRefresh(video, load.Snapshot);
+            }
+
+            foreach (var importedVideo in importResult.CreatedItems
                          .OfType<Video>()
                          .Where(video => !video.Id.Equals(providerTarget.Id)))
             {
@@ -244,7 +250,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         return currentParent;
     }
 
-    private IReadOnlyList<BaseItem> ImportMissingDescendants(
+    private DescendantImportResult ImportMissingDescendants(
         Folder root,
         AutoFilmDirectorySnapshot snapshot,
         bool recursive,
@@ -252,10 +258,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
     {
         if (!recursive)
         {
-            return Array.Empty<BaseItem>();
+            return DescendantImportResult.Empty;
         }
 
         var created = new List<BaseItem>();
+        var videos = new List<Video>();
         var pending = new Queue<Folder>();
         var visited = new HashSet<string>(StringComparer.Ordinal);
         pending.Enqueue(root);
@@ -294,10 +301,14 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 {
                     pending.Enqueue(childFolder);
                 }
+                else if (item is Video video)
+                {
+                    videos.Add(video);
+                }
             }
         }
 
-        return created;
+        return new DescendantImportResult(created, videos);
     }
 
     private async Task<SnapshotLoadResult> LoadSnapshotAsync(
@@ -661,4 +672,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         AutoFilmDirectorySnapshot Snapshot,
         int DirectoriesRead,
         int ObjectsRead);
+
+    private sealed record DescendantImportResult(
+        IReadOnlyList<BaseItem> CreatedItems,
+        IReadOnlyList<Video> Videos)
+    {
+        public static DescendantImportResult Empty { get; } = new(
+            Array.Empty<BaseItem>(),
+            Array.Empty<Video>());
+    }
 }

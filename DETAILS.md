@@ -30,6 +30,8 @@ responsibility:
     and metadata providers.
   - Recursively creates descendants missing from an existing Jellyfin folder
     without treating a partial or unavailable remote snapshot as deletion.
+  - Refreshes metadata for every discovered video and probes newly created
+    videos through the serialized remote probe queue.
   - When `provider_target` is `movie`, applies provider IDs to the only direct
     video in a result directory; series refreshes retain folder-level behavior.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
@@ -40,6 +42,9 @@ responsibility:
     delivery.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaSourceProvider.cs`
   - Dynamic HTTP direct-play source using existing Jellyfin media streams.
+- `Emby.Server.Implementations/Library/LibraryManager.cs`
+  - Lets Jellyfin's standard episode-name parser consume the underlying
+    OpenList path when filling missing season and episode numbers.
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
   - OpenList directory browsing and path-only remote refresh.
 - `Jellyfin.Api/Helpers/AutoFilmRedirectHelper.cs`
