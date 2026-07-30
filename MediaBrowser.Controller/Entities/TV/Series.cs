@@ -50,11 +50,6 @@ namespace MediaBrowser.Controller.Entities.TV
         [JsonIgnore]
         public override bool SupportsPeople => true;
 
-        public override bool CanDelete()
-        {
-            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
-        }
-
         /// <inheritdoc />
         [JsonIgnore]
         public IReadOnlyList<BaseItem> LocalTrailers => GetExtras([Model.Entities.ExtraType.Trailer]).ToArray();
@@ -72,6 +67,11 @@ namespace MediaBrowser.Controller.Entities.TV
         /// </summary>
         /// <value>The status.</value>
         public SeriesStatus? Status { get; set; }
+
+        public override bool CanDelete()
+        {
+            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
+        }
 
         public override double GetDefaultPrimaryImageAspectRatio()
         {
