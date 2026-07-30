@@ -94,6 +94,13 @@ offline task succeeds because the provider result can exist while OpenList's
 cached parent listing still reflects the previous state. The refresh remains
 bounded to that parent and the requested result hierarchy.
 
+When `recursive:true` targets an existing Jellyfin folder, Jellyfin resolves
+every missing descendant from the bounded snapshot and creates the missing
+records through its normal library resolvers. This restores episodes lost
+during an earlier provider outage. The operation is additive: records absent
+from the current OpenList snapshot are preserved rather than deleted, because
+a remote storage outage must not be interpreted as a confirmed media deletion.
+
 The requested path must be inside a configured OpenList media library root.
 Parent discovery uses only `openlist:///` Folder records and never accesses a
 host filesystem path for an OpenList item.

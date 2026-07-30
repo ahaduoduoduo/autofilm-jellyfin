@@ -89,6 +89,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         if (existing is not null)
         {
+            var importedItems = existing is Folder existingFolder
+                ? ImportMissingDescendants(
+                    existingFolder,
+                    load.Snapshot,
+                    request.Recursive,
+                    cancellationToken)
+                : Array.Empty<BaseItem>();
             var destinationParent = parent is null
                 ? null
                 : EnsureParentHierarchy(
@@ -117,6 +124,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             }
 
             QueueMetadataRefresh(providerTarget, load.Snapshot);
+            foreach (var importedVideo in importedItems
+                         .OfType<Video>()
+                         .Where(video => !video.Id.Equals(providerTarget.Id)))
+            {
+                QueueProbe(importedVideo, false);
+            }
+
             QueueProbe(providerTarget, request.ForceProbe);
             return CreateResult(
                 "refreshed",
@@ -228,6 +242,62 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         }
 
         return currentParent;
+    }
+
+    private IReadOnlyList<BaseItem> ImportMissingDescendants(
+        Folder root,
+        AutoFilmDirectorySnapshot snapshot,
+        bool recursive,
+        CancellationToken cancellationToken)
+    {
+        if (!recursive)
+        {
+            return Array.Empty<BaseItem>();
+        }
+
+        var created = new List<BaseItem>();
+        var pending = new Queue<Folder>();
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        pending.Enqueue(root);
+        while (pending.TryDequeue(out var currentParent))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (string.IsNullOrEmpty(currentParent.Path)
+                || !visited.Add(currentParent.Path))
+            {
+                continue;
+            }
+
+            foreach (var entry in snapshot.GetFileSystemEntries(
+                         currentParent.Path))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var item = _libraryManager.FindByPath(
+                    entry.FullName,
+                    entry.IsDirectory);
+                if (item is null)
+                {
+                    item = _libraryManager.ResolvePath(
+                        entry,
+                        currentParent,
+                        snapshot);
+                    if (item is null)
+                    {
+                        continue;
+                    }
+
+                    _libraryManager.CreateItem(item, currentParent);
+                    created.Add(item);
+                }
+
+                if (item is Folder childFolder)
+                {
+                    pending.Enqueue(childFolder);
+                }
+            }
+        }
+
+        return created;
     }
 
     private async Task<SnapshotLoadResult> LoadSnapshotAsync(
