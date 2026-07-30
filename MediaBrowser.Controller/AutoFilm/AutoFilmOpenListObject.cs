@@ -45,18 +45,6 @@ public sealed record AutoFilmOpenListObject
     public DateTime Created { get; init; }
 
     /// <summary>
-    /// Gets the object version.
-    /// </summary>
-    [JsonPropertyName("version")]
-    public long Version { get; init; }
-
-    /// <summary>
-    /// Gets the content identity tag.
-    /// </summary>
-    [JsonPropertyName("etag")]
-    public string ETag { get; init; } = string.Empty;
-
-    /// <summary>
     /// Gets the signed OpenList download path.
     /// </summary>
     [JsonPropertyName("download_path")]
