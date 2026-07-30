@@ -41,8 +41,6 @@ namespace Jellyfin.Api.Controllers;
 [Route("")]
 public class SubtitleController : BaseJellyfinApiController
 {
-    private const long SubtitleUploadRequestSizeLimit = 256 * 1024 * 1024;
-
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly ILibraryManager _libraryManager;
     private readonly ISubtitleManager _subtitleManager;
@@ -459,7 +457,6 @@ public class SubtitleController : BaseJellyfinApiController
     /// <returns>A <see cref="NoContentResult"/>.</returns>
     [HttpPost("Videos/{itemId}/Subtitles")]
     [Authorize(Policy = Policies.SubtitleManagement)]
-    [RequestSizeLimit(SubtitleUploadRequestSizeLimit)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UploadSubtitle(
@@ -472,19 +469,6 @@ public class SubtitleController : BaseJellyfinApiController
             return NotFound();
         }
 
-        var autoFilmUpload = await _autoFilmSubtitleService.UploadAsync(
-            itemId,
-            body.Format,
-            body.Language,
-            body.IsForced,
-            body.IsHearingImpaired,
-            Convert.FromBase64String(body.Data),
-            HttpContext.RequestAborted).ConfigureAwait(false);
-        if (autoFilmUpload is not null)
-        {
-            return NoContent();
-        }
-
         var bytes = Encoding.UTF8.GetBytes(body.Data);
         var memoryStream = new MemoryStream(bytes, 0, bytes.Length, false, true);
         await using (memoryStream.ConfigureAwait(false))
@@ -493,21 +477,96 @@ public class SubtitleController : BaseJellyfinApiController
             var stream = new CryptoStream(memoryStream, transform, CryptoStreamMode.Read);
             await using (stream.ConfigureAwait(false))
             {
-                await _subtitleManager.UploadSubtitle(
+                return await UploadSubtitleStreamAsync(
                     item,
-                    new SubtitleResponse
-                    {
-                        Format = body.Format,
-                        Language = body.Language,
-                        IsForced = body.IsForced,
-                        IsHearingImpaired = body.IsHearingImpaired,
-                        Stream = stream
-                    }).ConfigureAwait(false);
-                _providerManager.QueueRefresh(item.Id, new MetadataRefreshOptions(new DirectoryService(_fileSystem)), RefreshPriority.High);
-
-                return NoContent();
+                    body.Format,
+                    body.Language,
+                    body.IsForced,
+                    body.IsHearingImpaired,
+                    stream,
+                    null).ConfigureAwait(false);
             }
         }
+    }
+
+    /// <summary>
+    /// Upload an external subtitle as an unbuffered binary request.
+    /// </summary>
+    /// <param name="itemId">The item the subtitle belongs to.</param>
+    /// <param name="format">The subtitle format.</param>
+    /// <param name="language">The subtitle language.</param>
+    /// <param name="isForced">Whether the subtitle is forced.</param>
+    /// <param name="isHearingImpaired">Whether the subtitle is for hearing impaired users.</param>
+    /// <response code="204">Subtitle uploaded.</response>
+    /// <response code="404">Item not found.</response>
+    /// <returns>A <see cref="NoContentResult"/>.</returns>
+    [HttpPost("AutoFilm/Videos/{itemId}/Subtitles")]
+    [Authorize(Policy = Policies.SubtitleManagement)]
+    [DisableRequestSizeLimit]
+    [Consumes(MediaTypeNames.Application.Octet)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UploadSubtitleStream(
+        [FromRoute, Required] Guid itemId,
+        [FromQuery, Required] string format,
+        [FromQuery, Required] string language,
+        [FromQuery] bool isForced = false,
+        [FromQuery] bool isHearingImpaired = false)
+    {
+        var item = _libraryManager.GetItemById<Video>(itemId, User.GetUserId());
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        return await UploadSubtitleStreamAsync(
+            item,
+            format,
+            language,
+            isForced,
+            isHearingImpaired,
+            Request.Body,
+            Request.ContentLength).ConfigureAwait(false);
+    }
+
+    private async Task<ActionResult> UploadSubtitleStreamAsync(
+        Video item,
+        string format,
+        string language,
+        bool isForced,
+        bool isHearingImpaired,
+        Stream content,
+        long? contentLength)
+    {
+        var autoFilmUpload = await _autoFilmSubtitleService.UploadAsync(
+            item.Id,
+            format,
+            language,
+            isForced,
+            isHearingImpaired,
+            content,
+            contentLength,
+            HttpContext.RequestAborted).ConfigureAwait(false);
+        if (autoFilmUpload is not null)
+        {
+            return NoContent();
+        }
+
+        await _subtitleManager.UploadSubtitle(
+            item,
+            new SubtitleResponse
+            {
+                Format = format,
+                Language = language,
+                IsForced = isForced,
+                IsHearingImpaired = isHearingImpaired,
+                Stream = content
+            }).ConfigureAwait(false);
+        _providerManager.QueueRefresh(
+            item.Id,
+            new MetadataRefreshOptions(new DirectoryService(_fileSystem)),
+            RefreshPriority.High);
+        return NoContent();
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +32,8 @@ public interface IAutoFilmSubtitleService
     /// <param name="language">Subtitle language.</param>
     /// <param name="isForced">Whether the subtitle is forced.</param>
     /// <param name="isHearingImpaired">Whether the subtitle is hearing impaired.</param>
-    /// <param name="content">Decoded subtitle content.</param>
+    /// <param name="content">Decoded subtitle content stream.</param>
+    /// <param name="contentLength">Known decoded content length, or null.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The remote resolution, or <see langword="null"/> when the video is not mapped.</returns>
     Task<AutoFilmSubtitleResolution?> UploadAsync(
@@ -40,7 +42,8 @@ public interface IAutoFilmSubtitleService
         string language,
         bool isForced,
         bool isHearingImpaired,
-        ReadOnlyMemory<byte> content,
+        Stream content,
+        long? contentLength,
         CancellationToken cancellationToken);
 
     /// <summary>

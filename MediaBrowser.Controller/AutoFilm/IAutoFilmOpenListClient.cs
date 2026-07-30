@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -60,16 +61,17 @@ public interface IAutoFilmOpenListClient
     /// <returns>The signed internal URI used by server-side probing.</returns>
     Uri GetInternalDownloadUri(AutoFilmOpenListObject obj);
 
-    /// <summary>
-    /// Uploads in-memory content without a local media directory.
+    /// Uploads a content stream without a local media directory.
     /// </summary>
     /// <param name="remotePath">Destination OpenList path.</param>
     /// <param name="content">Content to upload.</param>
+    /// <param name="contentLength">Known content length, or null for a chunked stream.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the upload.</returns>
     Task UploadContentAsync(
         string remotePath,
-        ReadOnlyMemory<byte> content,
+        Stream content,
+        long? contentLength,
         CancellationToken cancellationToken);
 
     /// <summary>

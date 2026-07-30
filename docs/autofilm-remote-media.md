@@ -136,15 +136,18 @@ For an external `openlist:///` subtitle:
 2. On explicit remote 404, remove the stale stream record.
 3. Authentication, network, or provider failures never remove the record.
 
-New Jellyfin subtitle uploads use the standard `/Videos/{id}/Subtitles`
-endpoint. Local items continue through Jellyfin's normal media-folder or
-metadata-folder save path. Remote items are written to OpenList first and then
-added to `MediaStreamInfos`. If the language filename already exists, remote
-uploads use Jellyfin-compatible numbered names such as `.zh.0.ass`.
-The subtitle endpoint permits request bodies up to 256 MiB so Base64-encoded
-SUP/PGS files are not rejected by ASP.NET Core's 30 MB default request limit.
-The larger limit applies only to this authenticated subtitle-management
-endpoint.
+Jellyfin's standard `/Videos/{id}/Subtitles` JSON endpoint remains compatible
+with Jellyfin Web, third-party clients, and plugins. AutoFilm Core sends every
+subtitle format to the authenticated
+`/AutoFilm/Videos/{id}/Subtitles` binary endpoint instead. The request body is
+streamed through Jellyfin to OpenList without Base64 expansion or a fixed
+request-size limit; the original content length is preserved when known.
+
+Both endpoints use the same internal subtitle save operation. Local items
+continue through Jellyfin's normal media-folder or metadata-folder save path.
+Remote items are written to OpenList first and then added to
+`MediaStreamInfos`. If the language filename already exists, remote uploads use
+Jellyfin-compatible numbered names such as `.zh.0.ass`.
 
 The standard subtitle delete endpoint removes local subtitles through
 Jellyfin's subtitle manager and removes remote subtitles through OpenList.

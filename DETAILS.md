@@ -21,6 +21,8 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOpenListClient.cs`
   - Token-authenticated path lookup, listing, upload, delete, public download
     URI, and container-internal download URI.
+  - Streams subtitle request bodies to OpenList and preserves a known content
+    length without buffering the complete file in Jellyfin.
   - For precise post-download refreshes, forwards the target-object refresh
     flag so OpenList reloads the exact parent directory before lookup.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmDirectorySnapshot.cs`
@@ -56,9 +58,9 @@ responsibility:
 - `Jellyfin.Api/Controllers/SubtitleController.cs`
   - Remote subtitle reads, local SUP raw-file responses with HTTP range support,
     upload, and delete integration.
-  - Applies a 256 MiB request limit only to authenticated subtitle uploads so
-    Base64-encoded graphical subtitles are accepted without changing the
-    server-wide request limit.
+  - Keeps the upstream Base64 JSON upload route for client compatibility and
+    adds an authenticated unbuffered binary route for all AutoFilm subtitle
+    formats; both use the same save operation.
 - `Jellyfin.Api/Controllers/LibraryController.cs`
   - OpenList-first item deletion.
 - `Emby.Server.Implementations/Library/MediaSourceManager.cs`
