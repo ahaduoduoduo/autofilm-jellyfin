@@ -193,12 +193,19 @@ Remote item and subtitle deletion calls the OpenList path delete endpoint
 before changing Jellyfin. If OpenList fails, Jellyfin returns an error and
 preserves the local record.
 
-Movie and episode DTOs backed by a valid `openlist:///` path report
-`CanDelete=true` when the current user has Jellyfin media-deletion permission.
-Jellyfin Web therefore exposes its normal **Delete media** action for remote
-videos. The standard confirmation dialog and user library restrictions remain
-in effect. Arbitrary HTTP media, remote library roots, seasons, and series do
-not gain delete capability from this extension.
+Movie, episode, series, and physical season DTOs backed by a valid
+`openlist:///` path report `CanDelete=true` when the current user has Jellyfin
+media-deletion permission. Jellyfin Web therefore exposes its normal delete
+action for those remote items. Deleting a season or series deletes its OpenList
+directory once, then removes the aggregate item and descendants from Jellyfin.
+The standard confirmation dialog and user library restrictions remain in
+effect.
+
+Virtual seasons do not have their own path and remain non-deletable, preventing
+a season action from deleting the containing series directory. Arbitrary HTTP
+media and remote library roots also remain non-deletable. AutoFilm Core's Agent
+tool continues to accept only exact Movie and Episode IDs; directory-level
+Series and Season deletion is reserved for Jellyfin's user interface.
 
 ## Safety
 

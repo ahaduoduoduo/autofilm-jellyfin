@@ -1,9 +1,13 @@
 # AutoFilm development status
 
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Expose Jellyfin Web deletion for physical OpenList season
+  directories and complete OpenList series while keeping virtual seasons and
+  media-library roots protected; AutoFilm Core remains limited to Movie and
+  Episode deletion.
 - [x] 2026-07-30: Expose Jellyfin Web media deletion for valid
   `openlist:///` movies and episodes while retaining normal user delete
   permissions and excluding arbitrary remote URLs and library folders.
