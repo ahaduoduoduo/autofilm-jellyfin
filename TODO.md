@@ -4,6 +4,9 @@ Updated: 2026-07-30
 
 ## Completed
 
+- [x] 2026-07-30: Recreate missing episode and video descendants during an
+  explicit recursive remote refresh without deleting records absent from the
+  current OpenList snapshot.
 - [x] 2026-07-30: Forward precise-refresh intent to OpenList object lookup so a
   newly completed offline-download result is visible without an administrator
   refreshing its parent directory manually.
