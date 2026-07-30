@@ -6,6 +6,8 @@ Updated: 2026-07-30
 
 - [x] 2026-07-28: Store item and external subtitle paths as `openlist:///`.
 - [x] 2026-07-28: Return OpenList 302 responses for video and remote subtitles.
+- [x] 2026-07-30: Preserve percent encoding in video and remote subtitle 302
+  locations so paths containing non-ASCII names remain valid HTTP headers.
 - [x] 2026-07-28: Expose direct-play-only HTTP media sources with transcoding
   disabled.
 - [x] 2026-07-28: Use Jellyfin resolvers and metadata providers for new remote

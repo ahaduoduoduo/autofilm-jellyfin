@@ -97,6 +97,10 @@ For a remote video, `/Videos/{id}/stream`:
 2. Calls `/api/autofilm/objects/get`.
 3. Returns a signed 302 using `AUTOFILM_OPENLIST_PUBLIC_URL`.
 
+The `Location` value uses the URI's escaped absolute representation. OpenList
+paths containing Chinese or other non-ASCII names therefore remain
+percent-encoded and are valid HTTP response headers.
+
 The generated media source is HTTP, direct-play-only, and reports existing
 Jellyfin `MediaStreams`. Transcoding is disabled.
 

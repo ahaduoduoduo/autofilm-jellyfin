@@ -55,7 +55,9 @@ This fork stores remote media and external subtitle paths directly as
 users, playback history, provider IDs, and existing media streams; no shadow
 catalog or OpenList object identifier is stored.
 
-Video and remote subtitle requests return signed OpenList redirects. New media
+Video and remote subtitle requests return signed OpenList redirects. Redirect
+locations preserve percent encoding for non-ASCII directory and file names.
+New media
 uses Jellyfin's normal resolvers and metadata providers, then enters a
 rate-limited, single-concurrency probe queue. AutoFilm Core normally sends an
 explicit `RemoteRefresh` after a download; Jellyfin does not poll.

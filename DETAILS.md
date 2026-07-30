@@ -36,6 +36,9 @@ responsibility:
   - Dynamic HTTP direct-play source using existing Jellyfin media streams.
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
   - OpenList directory browsing and path-only remote refresh.
+- `Jellyfin.Api/Helpers/AutoFilmRedirectHelper.cs`
+  - Produces ASCII-safe `Location` values for video and remote subtitle 302
+    responses, including paths with non-ASCII names.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`

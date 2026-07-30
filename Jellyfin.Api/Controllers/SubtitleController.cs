@@ -248,7 +248,8 @@ public class SubtitleController : BaseJellyfinApiController
             HttpContext.RequestAborted).ConfigureAwait(false);
         if (autoFilmSubtitle?.RemoteUri is not null)
         {
-            return Redirect(autoFilmSubtitle.RemoteUri.ToString());
+            return Redirect(AutoFilmRedirectHelper.GetLocation(
+                autoFilmSubtitle.RemoteUri));
         }
 
         if (autoFilmSubtitle?.LocalPath is not null)
