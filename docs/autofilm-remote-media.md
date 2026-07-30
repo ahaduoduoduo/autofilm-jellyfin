@@ -126,6 +126,10 @@ records through its normal library resolvers. This restores episodes lost
 during an earlier provider outage. The operation is additive: records absent
 from the current OpenList snapshot are preserved rather than deleted, because
 a remote storage outage must not be interpreted as a confirmed media deletion.
+Every discovered video also receives its normal metadata refresh. Episode
+number parsing accepts the underlying OpenList path, so names such as
+`The.Capture.S03E01.mkv` populate season and episode indexes in the same way as
+local files.
 
 The requested path must be inside a configured OpenList media library root.
 Parent discovery uses only `openlist:///` Folder records; it never falls back to
