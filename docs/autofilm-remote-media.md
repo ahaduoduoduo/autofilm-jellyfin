@@ -101,13 +101,16 @@ Content-Type: application/json
   "recursive": false,
   "refresh": false,
   "force_probe": false,
+  "provider_target": "movie",
   "provider_ids": {
     "Tmdb": "123"
   }
 }
 ```
 
-`provider_ids` is optional. Jellyfin builds an in-memory directory snapshot,
+`provider_ids` is optional. For a single-file movie result directory,
+`provider_target: "movie"` binds those IDs to the direct video rather than the
+wrapper directory. Jellyfin builds an in-memory directory snapshot,
 uses its normal resolvers, creates missing records, queues normal metadata
 providers, and probes only new videos or explicit force requests.
 

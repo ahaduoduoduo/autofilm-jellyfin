@@ -4,6 +4,8 @@ Updated: 2026-07-30
 
 ## Completed
 
+- [x] 2026-07-30: Bind movie provider IDs to the single video inside an exact
+  OpenList result directory instead of applying them to the wrapper folder.
 - [x] 2026-07-28: Store item and external subtitle paths as `openlist:///`.
 - [x] 2026-07-28: Migrate the existing Jellyfin database without OpenList
   queries, media probes, or a shadow catalog.

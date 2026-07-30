@@ -30,6 +30,8 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`
   - Creates or refreshes a bounded remote hierarchy through normal resolvers
     and metadata providers.
+  - When `provider_target` is `movie`, applies provider IDs to the only direct
+    video in a result directory; series refreshes retain folder-level behavior.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`

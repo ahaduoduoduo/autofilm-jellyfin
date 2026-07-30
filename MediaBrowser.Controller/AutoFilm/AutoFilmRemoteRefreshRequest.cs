@@ -37,4 +37,10 @@ public sealed record AutoFilmRemoteRefreshRequest
     /// </summary>
     [JsonPropertyName("provider_ids")]
     public IReadOnlyDictionary<string, string>? ProviderIds { get; init; }
+
+    /// <summary>
+    /// Gets the media kind that should receive provider identifiers.
+    /// </summary>
+    [JsonPropertyName("provider_target")]
+    public string? ProviderTarget { get; init; }
 }
