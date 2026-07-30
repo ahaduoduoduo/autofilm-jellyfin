@@ -28,7 +28,8 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`
   - Creates or refreshes a bounded remote hierarchy through normal resolvers
     and metadata providers.
-  - Recursively creates descendants missing from an existing Jellyfin folder
+  - Uses the same additive descendant importer for new and existing Jellyfin
+    folders, including episode, season, and multi-season result directories,
     without treating a partial or unavailable remote snapshot as deletion.
   - Refreshes metadata for every discovered video and probes newly created
     videos through the serialized remote probe queue.
@@ -55,6 +56,9 @@ responsibility:
 - `Jellyfin.Api/Controllers/SubtitleController.cs`
   - Remote subtitle reads, local SUP raw-file responses with HTTP range support,
     upload, and delete integration.
+  - Applies a 256 MiB request limit only to authenticated subtitle uploads so
+    Base64-encoded graphical subtitles are accepted without changing the
+    server-wide request limit.
 - `Jellyfin.Api/Controllers/LibraryController.cs`
   - OpenList-first item deletion.
 - `Emby.Server.Implementations/Library/MediaSourceManager.cs`

@@ -89,13 +89,6 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         if (existing is not null)
         {
-            var importResult = existing is Folder existingFolder
-                ? ImportMissingDescendants(
-                    existingFolder,
-                    load.Snapshot,
-                    request.Recursive,
-                    cancellationToken)
-                : DescendantImportResult.Empty;
             var destinationParent = parent is null
                 ? null
                 : EnsureParentHierarchy(
@@ -111,33 +104,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     cancellationToken).ConfigureAwait(false);
             }
 
-            var providerTarget = ResolveProviderTarget(
+            var providerTarget = await ProcessResolvedItemAsync(
                 existing,
                 request,
-                load.Snapshot);
-            ApplyProviderIds(providerTarget, request.ProviderIds);
-            if (request.ProviderIds is { Count: > 0 })
-            {
-                await providerTarget.UpdateToRepositoryAsync(
-                    ItemUpdateType.MetadataEdit,
-                    cancellationToken).ConfigureAwait(false);
-            }
-
-            QueueMetadataRefresh(providerTarget, load.Snapshot);
-            foreach (var video in importResult.Videos
-                         .Where(video => !video.Id.Equals(providerTarget.Id)))
-            {
-                QueueMetadataRefresh(video, load.Snapshot);
-            }
-
-            foreach (var importedVideo in importResult.CreatedItems
-                         .OfType<Video>()
-                         .Where(video => !video.Id.Equals(providerTarget.Id)))
-            {
-                QueueProbe(importedVideo, false);
-            }
-
-            QueueProbe(providerTarget, request.ForceProbe);
+                load.Snapshot,
+                cancellationToken).ConfigureAwait(false);
             return CreateResult(
                 "refreshed",
                 providerTarget,
@@ -193,21 +164,55 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 $"Jellyfin did not create an item for '{openListPath}'.");
         }
 
-        resolvedItem = ResolveProviderTarget(
+        resolvedItem = await ProcessResolvedItemAsync(
             resolvedItem,
             request,
-            load.Snapshot);
-        ApplyProviderIds(resolvedItem, request.ProviderIds);
+            load.Snapshot,
+            cancellationToken).ConfigureAwait(false);
+        return CreateResult("created", resolvedItem, load, remotePath);
+    }
+
+    private async Task<BaseItem> ProcessResolvedItemAsync(
+        BaseItem resolvedItem,
+        AutoFilmRemoteRefreshRequest request,
+        AutoFilmDirectorySnapshot snapshot,
+        CancellationToken cancellationToken)
+    {
+        var importResult = resolvedItem is Folder folder
+            ? ImportMissingDescendants(
+                folder,
+                snapshot,
+                request.Recursive,
+                cancellationToken)
+            : DescendantImportResult.Empty;
+        var providerTarget = ResolveProviderTarget(
+            resolvedItem,
+            request,
+            snapshot);
+        ApplyProviderIds(providerTarget, request.ProviderIds);
         if (request.ProviderIds is { Count: > 0 })
         {
-            await resolvedItem.UpdateToRepositoryAsync(
+            await providerTarget.UpdateToRepositoryAsync(
                 ItemUpdateType.MetadataEdit,
                 cancellationToken).ConfigureAwait(false);
         }
 
-        QueueMetadataRefresh(resolvedItem, load.Snapshot);
-        QueueProbe(resolvedItem, request.ForceProbe);
-        return CreateResult("created", resolvedItem, load, remotePath);
+        QueueMetadataRefresh(providerTarget, snapshot);
+        foreach (var video in importResult.Videos
+                     .Where(video => !video.Id.Equals(providerTarget.Id)))
+        {
+            QueueMetadataRefresh(video, snapshot);
+        }
+
+        foreach (var importedVideo in importResult.CreatedItems
+                     .OfType<Video>()
+                     .Where(video => !video.Id.Equals(providerTarget.Id)))
+        {
+            QueueProbe(importedVideo, false);
+        }
+
+        QueueProbe(providerTarget, request.ForceProbe);
+        return providerTarget;
     }
 
     private Folder EnsureParentHierarchy(

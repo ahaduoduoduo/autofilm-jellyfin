@@ -41,6 +41,8 @@ namespace Jellyfin.Api.Controllers;
 [Route("")]
 public class SubtitleController : BaseJellyfinApiController
 {
+    private const long SubtitleUploadRequestSizeLimit = 256 * 1024 * 1024;
+
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly ILibraryManager _libraryManager;
     private readonly ISubtitleManager _subtitleManager;
@@ -457,6 +459,7 @@ public class SubtitleController : BaseJellyfinApiController
     /// <returns>A <see cref="NoContentResult"/>.</returns>
     [HttpPost("Videos/{itemId}/Subtitles")]
     [Authorize(Policy = Policies.SubtitleManagement)]
+    [RequestSizeLimit(SubtitleUploadRequestSizeLimit)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UploadSubtitle(

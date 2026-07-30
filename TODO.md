@@ -4,6 +4,12 @@ Updated: 2026-07-30
 
 ## Completed
 
+- [x] 2026-07-30: Run the additive descendant importer for newly created remote
+  folders so first-time episode, season, and multi-season downloads create
+  their contained videos during the same explicit refresh.
+- [x] 2026-07-30: Raise only the authenticated subtitle-upload request limit to
+  256 MiB so Base64-encoded SUP/PGS uploads can reach the remote subtitle
+  service.
 - [x] 2026-07-30: Recreate missing episode and video descendants during an
   explicit recursive remote refresh without deleting records absent from the
   current OpenList snapshot.
