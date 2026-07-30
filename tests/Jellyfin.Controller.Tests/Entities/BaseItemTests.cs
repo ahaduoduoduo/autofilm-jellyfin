@@ -7,6 +7,7 @@ using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaSegments;
@@ -57,6 +58,19 @@ public class BaseItemTests
 
         Assert.True(new Video { Path = "openlist:///115/movie/example.mkv" }.CanDelete());
         Assert.False(new Video { Path = "https://example.invalid/example.mkv" }.CanDelete());
+    }
+
+    [Fact]
+    public void CanDelete_OpenListTvFolders_ReturnsTrueOnlyForPhysicalRemoteFolders()
+    {
+        var mediaSourceManager = new Mock<IMediaSourceManager>();
+        mediaSourceManager.Setup(x => x.GetPathProtocol(It.IsAny<string>())).Returns(MediaProtocol.Http);
+        BaseItem.MediaSourceManager = mediaSourceManager.Object;
+
+        Assert.True(new Series { Path = "openlist:///115/tv/example" }.CanDelete());
+        Assert.True(new Season { Path = "openlist:///115/tv/example/Season 01" }.CanDelete());
+        Assert.False(new Season { Path = null }.CanDelete());
+        Assert.False(new Series { Path = "https://example.invalid/show" }.CanDelete());
     }
 
     [Fact]

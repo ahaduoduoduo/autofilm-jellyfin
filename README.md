@@ -70,8 +70,9 @@ standard subtitle API is the common entry point for local and OpenList media;
 remote uploads use the same language naming and numbered collision behavior as
 local uploads and update the item's external subtitle streams immediately.
 Users with Jellyfin media-deletion permission also receive the standard web
-delete action for remote movies and episodes; remote deletion must succeed
-before the database record is removed.
+delete action for remote movies, episodes, physical seasons, and series.
+Remote deletion must succeed before the database record is removed. Virtual
+seasons and media-library roots remain non-deletable.
 
 Media library sources can be `Local` or `OpenList`. OpenList roots are stored
 as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;

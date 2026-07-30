@@ -12,6 +12,7 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions;
 using MediaBrowser.Common;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Querying;
@@ -38,6 +39,13 @@ namespace MediaBrowser.Controller.Entities.TV
 
         [JsonIgnore]
         public override bool SupportsInheritedParentImages => true;
+
+        public override bool CanDelete()
+        {
+            // Virtual seasons have no path, so this only enables real OpenList
+            // season directories and cannot fall back to deleting the series root.
+            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
+        }
 
         [JsonIgnore]
         public override Guid DisplayParentId => SeriesId;

@@ -12,6 +12,7 @@ using Jellyfin.Data;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Database.Implementations.Enums;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -48,6 +49,11 @@ namespace MediaBrowser.Controller.Entities.TV
 
         [JsonIgnore]
         public override bool SupportsPeople => true;
+
+        public override bool CanDelete()
+        {
+            return AutoFilmRemotePath.IsRemote(Path) || base.CanDelete();
+        }
 
         /// <inheritdoc />
         [JsonIgnore]

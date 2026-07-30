@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
@@ -72,6 +72,10 @@ responsibility:
   - Reports valid `openlist:///` movies and episodes as deletable so Jellyfin
     Web can expose its standard delete action while preserving user policy
     checks.
+- `MediaBrowser.Controller/Entities/TV/Series.cs` and `Season.cs`
+  - Report physical OpenList series and season directories as deletable.
+  - Virtual seasons remain protected because they do not have their own path;
+    media-library roots retain their upstream non-deletable behavior.
 - `Emby.Server.Implementations/Library/MediaSourceManager.cs`
   - Prevents local filesystem probing and normalizes external SUP streams.
 - `Emby.Server.Implementations/Library/LibraryManager.cs`
