@@ -88,6 +88,12 @@ wrapper directory. Jellyfin builds an in-memory directory snapshot,
 uses its normal resolvers, creates missing records, queues normal metadata
 providers, and probes only new videos or explicit force requests.
 
+When `refresh:true`, the exact target object lookup refreshes its OpenList
+parent directory before resolving the target. This is required after a remote
+offline task succeeds because the provider result can exist while OpenList's
+cached parent listing still reflects the previous state. The refresh remains
+bounded to that parent and the requested result hierarchy.
+
 The requested path must be inside a configured OpenList media library root.
 Parent discovery uses only `openlist:///` Folder records and never accesses a
 host filesystem path for an OpenList item.
