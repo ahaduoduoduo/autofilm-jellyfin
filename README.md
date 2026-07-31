@@ -59,8 +59,11 @@ Video and remote subtitle requests return signed OpenList redirects. Redirect
 locations preserve percent encoding for non-ASCII directory and file names.
 New media
 uses Jellyfin's normal resolvers and metadata providers, then enters a
-rate-limited, single-concurrency probe queue. AutoFilm Core normally sends an
-explicit `RemoteRefresh` after a new-media
+rate-limited, single-concurrency probe queue.
+When an administrator later uses Jellyfin's standard metadata refresh on an
+OpenList Movie or Episode that still has no embedded video stream record, the
+same queue repairs its media information without reprobeing healthy items.
+AutoFilm Core normally sends an explicit `RemoteRefresh` after a new-media
 download; Jellyfin does not poll. Existing-media upgrades use the separate
 MediaReplacement API to keep the original Item ID and never run the new-item
 import or metadata-provider path.

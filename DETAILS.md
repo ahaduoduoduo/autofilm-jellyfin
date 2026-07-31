@@ -42,6 +42,11 @@ responsibility:
     video in a result directory; series refreshes retain folder-level behavior.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
+- `Jellyfin.Api/Controllers/ItemRefreshController.cs`
+  - Keeps the upstream metadata refresh behavior and additionally queues an
+    OpenList Movie or Episode for a non-forced probe. The queue skips items
+    that already have an embedded video stream; historical streamless items
+    receive width, height, runtime, bitrate, size, container and track data.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmMediaReplacementService.cs`
   - Uses the configured Jellyfin naming rules to inspect completed OpenList
     results and the normal media encoder to probe an exact replacement.
