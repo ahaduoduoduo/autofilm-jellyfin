@@ -114,6 +114,16 @@ wrapper directory. Jellyfin builds an in-memory directory snapshot,
 uses its normal resolvers, creates missing records, queues normal metadata
 providers, and probes only new videos or explicit force requests.
 
+An administrator's standard Jellyfin metadata refresh also enqueues the exact
+OpenList Movie or Episode with `force=false`. This covers historical records
+whose path and metadata exist but whose ffprobe never completed. The queue
+checks the stored streams before accessing OpenList and returns immediately
+when an embedded video stream already exists, so refreshing a healthy remote
+item does not read the provider or replace valid tracks. A streamless item is
+probed through the authenticated internal OpenList download URL; the result
+updates tracks, width, height, runtime, bitrate, container and remote object
+size without changing Item ID, provider IDs, images or user data.
+
 When `refresh:true`, the exact target object lookup refreshes its OpenList
 parent directory before resolving the target. This is required after a remote
 offline task succeeds because the provider result can exist while OpenList's

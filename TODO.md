@@ -4,6 +4,9 @@ Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Make Jellyfin's standard administrator metadata refresh
+  enqueue an OpenList Movie/Episode for remote probing when its embedded video
+  stream record is missing; healthy remote items remain probe-free.
 - [x] 2026-07-31: Retry an exact replacement ffprobe after temporary
   `FfmpegException` failures, with three total attempts and bounded delays;
   cancellation and other failures remain immediate.

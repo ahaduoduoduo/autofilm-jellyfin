@@ -5,6 +5,7 @@ using Jellyfin.Api.Constants;
 using Jellyfin.Api.Extensions;
 using Jellyfin.Api.Helpers;
 using MediaBrowser.Common.Api;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
@@ -26,6 +27,7 @@ public class ItemRefreshController : BaseJellyfinApiController
     private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
     private readonly IFileSystem _fileSystem;
+    private readonly IAutoFilmRemoteProbeQueue _remoteProbeQueue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ItemRefreshController"/> class.
@@ -33,14 +35,17 @@ public class ItemRefreshController : BaseJellyfinApiController
     /// <param name="libraryManager">Instance of <see cref="ILibraryManager"/> interface.</param>
     /// <param name="providerManager">Instance of <see cref="IProviderManager"/> interface.</param>
     /// <param name="fileSystem">Instance of <see cref="IFileSystem"/> interface.</param>
+    /// <param name="remoteProbeQueue">AutoFilm remote media probe queue.</param>
     public ItemRefreshController(
         ILibraryManager libraryManager,
         IProviderManager providerManager,
-        IFileSystem fileSystem)
+        IFileSystem fileSystem,
+        IAutoFilmRemoteProbeQueue remoteProbeQueue)
     {
         _libraryManager = libraryManager;
         _providerManager = providerManager;
         _fileSystem = fileSystem;
+        _remoteProbeQueue = remoteProbeQueue;
     }
 
     /// <summary>
@@ -89,6 +94,15 @@ public class ItemRefreshController : BaseJellyfinApiController
         };
 
         _providerManager.QueueRefresh(item.Id, refreshOptions, RefreshPriority.High);
+        if (item is Video
+            && AutoFilmRemotePath.TryGetOpenListPath(item.Path, out _))
+        {
+            // A metadata refresh does not necessarily inspect an unchanged
+            // remote file. The queue skips items that already have an embedded
+            // video stream, so healthy OpenList items cause no storage read.
+            _remoteProbeQueue.Enqueue(item.Id, false);
+        }
+
         return NoContent();
     }
 }
