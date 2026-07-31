@@ -1,6 +1,6 @@
 # AutoFilm remote media behavior
 
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 ## Persistent model
 
@@ -139,6 +139,68 @@ The requested path must be inside a configured OpenList media library root.
 Parent discovery uses only `openlist:///` Folder records; it never falls back to
 the legacy local path.
 
+## Existing media replacement
+
+Resource upgrades do not use `RemoteRefresh`, because importing the replacement
+as new media would create another item and separate user data. The replacement
+API modifies only the media backing an existing remote Movie or Episode.
+
+All endpoints require administrator permission:
+
+```text
+POST /AutoFilm/MediaReplacement/Inspect
+POST /AutoFilm/MediaReplacement/Preview
+POST /AutoFilm/MediaReplacement/Apply
+POST /AutoFilm/MediaReplacement/Rollback
+```
+
+`Inspect` accepts an OpenList path and a recursive flag. It lists at most 64
+directories and 5000 objects, runs the configured Jellyfin `VideoResolver` and
+`EpisodeResolver`, and returns recognized video paths, sizes, extra types and
+season/episode hints. It is read-only and does not create library records.
+
+`Preview` accepts an existing Item ID and one exact OpenList file path. The
+target must be an OpenList-backed Video. Jellyfin:
+
+1. refreshes and resolves the exact OpenList object;
+2. verifies that its extension is recognized by current naming options;
+3. probes the internal signed download URI through `IMediaEncoder`;
+4. returns current and replacement size, duration, bitrate, container,
+   resolution and streams;
+5. stores an immutable preview token for 30 minutes.
+
+At most two replacement probes run concurrently. This limit is separate from
+the serialized new-media probe queue.
+
+`Apply` consumes the preview once and acquires a lock for that Item ID. It
+requires the Jellyfin path to remain unchanged, the replacement size and
+modification time to match the preview, and the replacement to be in the same
+OpenList directory as the current video. It then:
+
+- replaces the path, size, duration, bitrate, container, width, height and
+  default video stream on the existing Video record;
+- stores the replacement's internal streams;
+- retains the current external subtitle streams and assigns a stable combined
+  stream order;
+- updates the repository as a metadata edit without running metadata providers,
+  changing provider IDs, changing images or creating another item.
+
+If either stream persistence or the Video update fails, Apply restores the
+previous fields and streams before returning the error. A successful result
+contains a rollback token and the same Item ID. The token is held in memory for
+seven days; a Jellyfin restart invalidates it.
+
+`Rollback` requires the old file to be present at its original path and the
+current item still to reference the applied replacement. AutoFilm Core moves
+its saved old file back before calling this endpoint. If the token was lost
+after a Jellyfin restart, Core probes the restored old file and applies it as a
+new reverse replacement.
+
+Core moves the replacement into the existing media directory before Apply.
+After Apply returns and the same Item ID reports the new path and a video
+stream, Core marks the item successful and moves the old file to its isolated
+backup directory. No user playback confirmation is required.
+
 ## Playback
 
 For a remote video, `/Videos/{id}/stream`:
@@ -208,7 +270,8 @@ rewriting.
 ## Explicit refresh
 
 OpenList uploads, moves, renames, and deletions do not automatically change
-Jellyfin. AutoFilm Core calls `RemoteRefresh` after a completed media download.
+Jellyfin. AutoFilm Core calls `RemoteRefresh` after a completed new-media
+download. Existing-media upgrades use the explicit replacement API above.
 An OpenList administrator may explicitly request the same operation for a
 selected path. Administrators can also select **Scan OpenList content** from
 the Jellyfin item menu for an existing OpenList folder. The explicit action
@@ -241,6 +304,6 @@ Series and Season deletion is reserved for Jellyfin's user interface.
 - Batch migration must run on a copied database first.
 - Real 115 delete, move, and bulk subtitle upload tests require a dedicated test
   directory.
-- Existing rclone, symlink, and Nginx services remain available only as
-  production rollback components until physical Infuse validation and rollback
-  preparation are complete.
+- Legacy media and subtitle mounts are read-only compatibility inputs for
+  migration; rclone, symlink and Nginx services are not part of the active
+  deployment.
