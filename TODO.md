@@ -4,6 +4,9 @@ Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Retry an exact replacement ffprobe after temporary
+  `FfmpegException` failures, with three total attempts and bounded delays;
+  cancellation and other failures remain immediate.
 - [x] 2026-07-31: Allow a replacement preview to use one independently
   verified original OpenList path when a migrated item differs only by filename
   separators and at most 1 MiB in recorded size; use that path for same-parent
