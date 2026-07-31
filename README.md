@@ -60,7 +60,10 @@ locations preserve percent encoding for non-ASCII directory and file names.
 New media
 uses Jellyfin's normal resolvers and metadata providers, then enters a
 rate-limited, single-concurrency probe queue. AutoFilm Core normally sends an
-explicit `RemoteRefresh` after a download; Jellyfin does not poll.
+explicit `RemoteRefresh` after a new-media
+download; Jellyfin does not poll. Existing-media upgrades use the separate
+MediaReplacement API to keep the original Item ID and never run the new-item
+import or metadata-provider path.
 
 The default branch contains no installation-specific database migration or
 legacy subtitle path fallback. Those compatibility features are isolated in
@@ -85,6 +88,14 @@ externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
 while local external SUP files are returned unchanged with HTTP range support.
 Playback and subtitle URL rewriting no longer requires an Nginx compatibility
 layer.
+
+The authenticated MediaReplacement API inspects a completed OpenList result
+with Jellyfin's own video and episode naming rules, probes one exact
+replacement through the normal media encoder, and atomically updates the
+existing Video path and media streams. It preserves external subtitle streams
+and all item/user metadata. Apply is restricted to a replacement file already
+moved into the original media directory and returns a short-lived rollback
+snapshot for automatic failure recovery.
 
 `Dockerfile.autofilm` builds both this server and the
 `ahaduoduoduo/autofilm-jellyfin-web` source tree. The resulting image serves

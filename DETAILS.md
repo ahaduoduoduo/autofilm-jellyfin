@@ -11,6 +11,9 @@ responsibility:
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
   - `AutoFilmSubtitleCompatibility.cs` normalizes external SUP responses.
+  - `IAutoFilmMediaReplacementService.cs` and
+    `AutoFilmMediaReplacementModels.cs` define bounded discovery, immutable
+    preview, apply and rollback contracts for an existing Video Item ID.
 - `MediaBrowser.Model/Configuration/MediaPathSourceType.cs`
   - Distinguishes normal host paths from OpenList media library sources.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmOptions.cs`
@@ -39,6 +42,15 @@ responsibility:
     video in a result directory; series refreshes retain folder-level behavior.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmMediaReplacementService.cs`
+  - Uses the configured Jellyfin naming rules to inspect completed OpenList
+    results and the normal media encoder to probe an exact replacement.
+  - Applies under a per-item lock after revalidating both paths and file facts;
+    updates the existing Video and internal streams, keeps current external
+    subtitle streams, and restores the previous snapshot on write failure.
+  - Keeps preview and rollback tokens only in process memory; Core can perform
+    a new reverse preview after restoring a backup when a server restart has
+    invalidated a token.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`
   - OpenList resolution, numbered new remote uploads, immediate stream
     insertion, stale stream removal, remote deletion, and raw local SUP
@@ -49,7 +61,8 @@ responsibility:
   - Lets Jellyfin's standard episode-name parser consume the underlying
     OpenList path when filling missing season and episode numbers.
 - `Jellyfin.Api/Controllers/AutoFilmController.cs`
-  - OpenList directory browsing and path-only remote refresh.
+  - OpenList directory browsing and path-only remote refresh, plus media
+    replacement inspect/preview/apply/rollback endpoints.
 - `Jellyfin.Api/Helpers/AutoFilmRedirectHelper.cs`
   - Produces ASCII-safe `Location` values for video and remote subtitle 302
     responses, including paths with non-ASCII names.

@@ -61,6 +61,7 @@ public interface IAutoFilmOpenListClient
     /// <returns>The signed internal URI used by server-side probing.</returns>
     Uri GetInternalDownloadUri(AutoFilmOpenListObject obj);
 
+    /// <summary>
     /// Uploads a content stream without a local media directory.
     /// </summary>
     /// <param name="remotePath">Destination OpenList path.</param>

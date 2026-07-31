@@ -602,6 +602,7 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IAutoFilmRemoteLibraryRoots, AutoFilmRemoteLibraryRoots>();
             serviceCollection.AddSingleton<IAutoFilmSubtitleService, AutoFilmSubtitleService>();
             serviceCollection.AddSingleton<IAutoFilmRemoteRefreshService, AutoFilmRemoteRefreshService>();
+            serviceCollection.AddSingleton<IAutoFilmMediaReplacementService, AutoFilmMediaReplacementService>();
             serviceCollection.AddSingleton<AutoFilmRemoteProbeQueue>();
             serviceCollection.AddSingleton<IAutoFilmRemoteProbeQueue>(
                 provider => provider.GetRequiredService<AutoFilmRemoteProbeQueue>());

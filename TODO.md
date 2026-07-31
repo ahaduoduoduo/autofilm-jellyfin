@@ -4,6 +4,16 @@ Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Add bounded, read-only replacement discovery using
+  Jellyfin's configured `VideoResolver` and `EpisodeResolver`, without creating
+  library records.
+- [x] 2026-07-31: Add preview/apply/rollback media replacement for an existing
+  OpenList Movie or Episode. Preview uses the normal media encoder; apply keeps
+  the same Item ID, metadata, images, provider IDs and user data while
+  replacing internal media streams and retaining external subtitles.
+- [x] 2026-07-31: Serialize apply per Item ID, revalidate path, size and
+  modification time, require the replacement in the same media directory, and
+  restore the previous database snapshot if persistence fails.
 - [x] 2026-07-31: Expose Jellyfin Web deletion for physical OpenList season
   directories and complete OpenList series while keeping virtual seasons and
   media-library roots protected; AutoFilm Core remains limited to Movie and

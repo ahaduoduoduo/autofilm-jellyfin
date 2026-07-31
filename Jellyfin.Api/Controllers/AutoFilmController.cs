@@ -20,18 +20,22 @@ namespace Jellyfin.Api.Controllers;
 public sealed class AutoFilmController : BaseJellyfinApiController
 {
     private readonly IAutoFilmRemoteRefreshService _remoteRefreshService;
+    private readonly IAutoFilmMediaReplacementService _mediaReplacementService;
     private readonly IAutoFilmOpenListClient _openListClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutoFilmController"/> class.
     /// </summary>
     /// <param name="remoteRefreshService">Precise remote refresh service.</param>
+    /// <param name="mediaReplacementService">In-place remote media replacement service.</param>
     /// <param name="openListClient">Authenticated OpenList client.</param>
     public AutoFilmController(
         IAutoFilmRemoteRefreshService remoteRefreshService,
+        IAutoFilmMediaReplacementService mediaReplacementService,
         IAutoFilmOpenListClient openListClient)
     {
         _remoteRefreshService = remoteRefreshService;
+        _mediaReplacementService = mediaReplacementService;
         _openListClient = openListClient;
     }
 
@@ -99,6 +103,94 @@ public sealed class AutoFilmController : BaseJellyfinApiController
         catch (ArgumentException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Finds remote videos without creating Jellyfin items.</summary>
+    [HttpPost("MediaReplacement/Inspect")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AutoFilmMediaReplacementInspectResult>> InspectReplacement(
+        [FromBody, Required] AutoFilmMediaReplacementInspectRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _mediaReplacementService.InspectAsync(
+                request,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Probes an exact remote replacement file.</summary>
+    [HttpPost("MediaReplacement/Preview")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AutoFilmMediaReplacementPreview>> PreviewReplacement(
+        [FromBody, Required] AutoFilmMediaReplacementPreviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _mediaReplacementService.PreviewAsync(
+                request,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Changes the media path and streams of an existing item.</summary>
+    [HttpPost("MediaReplacement/Apply")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AutoFilmMediaReplacementResult>> ApplyReplacement(
+        [FromBody, Required] AutoFilmMediaReplacementApplyRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _mediaReplacementService.ApplyAsync(
+                request,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Restores the previous media snapshot for an existing item.</summary>
+    [HttpPost("MediaReplacement/Rollback")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AutoFilmMediaReplacementResult>> RollbackReplacement(
+        [FromBody, Required] AutoFilmMediaReplacementRollbackRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _mediaReplacementService.RollbackAsync(
+                request,
+                cancellationToken).ConfigureAwait(false);
         }
         catch (InvalidOperationException ex)
         {
