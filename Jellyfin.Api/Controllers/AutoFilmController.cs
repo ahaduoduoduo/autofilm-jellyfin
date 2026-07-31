@@ -111,6 +111,9 @@ public sealed class AutoFilmController : BaseJellyfinApiController
     }
 
     /// <summary>Finds remote videos without creating Jellyfin items.</summary>
+    /// <param name="request">The bounded OpenList discovery request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The videos recognized below the requested path.</returns>
     [HttpPost("MediaReplacement/Inspect")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -135,6 +138,9 @@ public sealed class AutoFilmController : BaseJellyfinApiController
     }
 
     /// <summary>Probes an exact remote replacement file.</summary>
+    /// <param name="request">The exact item and replacement file request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The immutable replacement preview.</returns>
     [HttpPost("MediaReplacement/Preview")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -159,6 +165,9 @@ public sealed class AutoFilmController : BaseJellyfinApiController
     }
 
     /// <summary>Changes the media path and streams of an existing item.</summary>
+    /// <param name="request">The immutable preview token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated Jellyfin item state.</returns>
     [HttpPost("MediaReplacement/Apply")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -179,6 +188,9 @@ public sealed class AutoFilmController : BaseJellyfinApiController
     }
 
     /// <summary>Restores the previous media snapshot for an existing item.</summary>
+    /// <param name="request">The rollback token returned by apply.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The restored Jellyfin item state.</returns>
     [HttpPost("MediaReplacement/Rollback")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
