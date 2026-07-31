@@ -32,6 +32,7 @@ public sealed class AutoFilmMediaReplacementService
     private static readonly TimeSpan RollbackLifetime = TimeSpan.FromDays(7);
     private static readonly JsonSerializerOptions CloneOptions =
         new(JsonSerializerDefaults.Web);
+
     private readonly ConcurrentDictionary<string, ReplacementPlan> _previews = new();
     private readonly ConcurrentDictionary<string, RollbackPlan> _rollbacks = new();
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _itemLocks = new();
@@ -42,7 +43,15 @@ public sealed class AutoFilmMediaReplacementService
     private readonly IAutoFilmOpenListClient _openListClient;
     private readonly NamingOptions _namingOptions;
 
-    /// <summary>Initializes a new instance.</summary>
+    /// <summary>
+    /// Initializes a new instance of the
+    /// <see cref="AutoFilmMediaReplacementService"/> class.
+    /// </summary>
+    /// <param name="libraryManager">Jellyfin library manager.</param>
+    /// <param name="mediaStreamRepository">Jellyfin media stream repository.</param>
+    /// <param name="mediaEncoder">Jellyfin media probing service.</param>
+    /// <param name="openListClient">OpenList object and download API client.</param>
+    /// <param name="namingOptions">Configured Jellyfin media naming options.</param>
     public AutoFilmMediaReplacementService(
         ILibraryManager libraryManager,
         IMediaStreamRepository mediaStreamRepository,
