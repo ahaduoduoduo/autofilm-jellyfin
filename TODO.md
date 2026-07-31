@@ -4,6 +4,10 @@ Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Allow a replacement preview to use one independently
+  verified original OpenList path when a migrated item differs only by filename
+  separators and at most 1 MiB in recorded size; use that path for same-parent
+  validation and rollback without changing the Item ID.
 - [x] 2026-07-31: Add bounded, read-only replacement discovery using
   Jellyfin's configured `VideoResolver` and `EpisodeResolver`, without creating
   library records.

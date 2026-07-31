@@ -141,6 +141,10 @@ public sealed class AutoFilmMediaReplacementService
     {
         CleanupExpired();
         var video = RequireRemoteVideo(request.ItemId);
+        var canonicalPreviousPath = await ResolvePreviousPathAsync(
+            video,
+            request.ResolvedOriginalPath,
+            cancellationToken).ConfigureAwait(false);
         var newPath = NormalizePath(request.NewPath);
         var replacementObject = await _openListClient.GetObjectAsync(
             newPath,
@@ -152,6 +156,8 @@ public sealed class AutoFilmMediaReplacementService
         {
             throw new InvalidOperationException("Replacement path is not a Jellyfin-recognized video file.");
         }
+
+        EnsureSameParent(canonicalPreviousPath, replacementObject.Path);
 
         await _probeSlots.WaitAsync(cancellationToken).ConfigureAwait(false);
         MediaInfo mediaInfo;
@@ -170,12 +176,16 @@ public sealed class AutoFilmMediaReplacementService
         var oldStreams = CloneStreams(GetStreams(video.Id));
         var token = Guid.NewGuid().ToString("N");
         var expiresAt = DateTimeOffset.UtcNow + PreviewLifetime;
-        var current = FactsFromVideo(video, oldStreams);
+        var current = FactsFromVideo(video, oldStreams) with
+        {
+            Path = canonicalPreviousPath
+        };
         var replacement = FactsFromProbe(replacementObject, mediaInfo);
         _previews[token] = new ReplacementPlan(
             expiresAt,
             video.Id,
             video.Path,
+            canonicalPreviousPath,
             replacementObject,
             mediaInfo);
         return new AutoFilmMediaReplacementPreview(
@@ -221,8 +231,11 @@ public sealed class AutoFilmMediaReplacementService
                 throw new InvalidOperationException("Replacement file changed after preview.");
             }
 
-            EnsureSameParent(plan.ExpectedOldPath, currentObject.Path);
-            var previous = Snapshot(video, CloneStreams(GetStreams(video.Id)));
+            EnsureSameParent(plan.CanonicalPreviousPath, currentObject.Path);
+            var previous = Snapshot(video, CloneStreams(GetStreams(video.Id))) with
+            {
+                Path = plan.CanonicalPreviousPath
+            };
             var replacementStreams = MergeReplacementStreams(
                 plan.MediaInfo.MediaStreams,
                 previous.Streams);
@@ -389,6 +402,49 @@ public sealed class AutoFilmMediaReplacementService
         }
 
         return video;
+    }
+
+    private async Task<string> ResolvePreviousPathAsync(
+        Video video,
+        string? resolvedOriginalPath,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(resolvedOriginalPath))
+        {
+            return video.Path;
+        }
+
+        var resolvedPath = NormalizePath(resolvedOriginalPath);
+        var resolvedObject = await _openListClient.GetObjectAsync(
+            resolvedPath,
+            true,
+            cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("Resolved original file does not exist.");
+        if (resolvedObject.IsDirectory
+            || VideoResolver.ResolveFile(resolvedPath, _namingOptions) is null)
+        {
+            throw new InvalidOperationException(
+                "Resolved original path is not a Jellyfin-recognized video file.");
+        }
+
+        var recordedPath = GetOpenListPath(video.Path);
+        if (!AutoFilmMediaReplacementPathGuard.AreSeparatorEquivalent(
+                recordedPath,
+                resolvedObject.Path))
+        {
+            throw new InvalidOperationException(
+                "Resolved original path differs by more than filename separators.");
+        }
+
+        if (!AutoFilmMediaReplacementPathGuard.HasCompatibleSize(
+                video.Size,
+                resolvedObject.Size))
+        {
+            throw new InvalidOperationException(
+                "Resolved original file size differs from the Jellyfin record.");
+        }
+
+        return AutoFilmRemotePath.FromOpenListPath(resolvedObject.Path);
     }
 
     private IReadOnlyList<MediaStream> GetStreams(Guid itemId) =>
@@ -559,6 +615,7 @@ public sealed class AutoFilmMediaReplacementService
         DateTimeOffset ExpiresAt,
         Guid ItemId,
         string ExpectedOldPath,
+        string CanonicalPreviousPath,
         AutoFilmOpenListObject ReplacementObject,
         MediaInfo MediaInfo);
 

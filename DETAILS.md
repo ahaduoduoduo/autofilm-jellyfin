@@ -11,8 +11,8 @@ responsibility:
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
   - `AutoFilmSubtitleCompatibility.cs` normalizes external SUP responses.
-  - `IAutoFilmMediaReplacementService.cs` and
-    `AutoFilmMediaReplacementModels.cs` define bounded discovery, immutable
+  - `IAutoFilmMediaReplacementService.cs` and the
+    `AutoFilmMediaReplacement*.cs` records define bounded discovery, immutable
     preview, apply and rollback contracts for an existing Video Item ID.
 - `MediaBrowser.Model/Configuration/MediaPathSourceType.cs`
   - Distinguishes normal host paths from OpenList media library sources.
@@ -55,6 +55,9 @@ responsibility:
   - Keeps preview and rollback tokens only in process memory; Core can perform
     a new reverse preview after restoring a backup when a server restart has
     invalidated a token.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmMediaReplacementPathGuard.cs`
+  - Independently verifies a Core-resolved legacy original path using complete
+    path separator equivalence and a 1 MiB file-size tolerance.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmSubtitleService.cs`
   - Remote-first resolution, local fallback, lazy migration, numbered new
     remote uploads, immediate stream insertion, stale stream removal, and

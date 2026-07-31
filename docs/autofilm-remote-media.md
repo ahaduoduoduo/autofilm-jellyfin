@@ -160,22 +160,29 @@ directories and 5000 objects, runs the configured Jellyfin `VideoResolver` and
 season/episode hints. It is read-only and does not create library records.
 
 `Preview` accepts an existing Item ID and one exact OpenList file path. The
-target must be an OpenList-backed Video. Jellyfin:
+target must be an OpenList-backed Video. It may also include a
+`resolvedOriginalPath` produced by Core when a historical migrated path no
+longer exists exactly. Jellyfin accepts this optional path only when the full
+recorded and actual paths differ by spaces, dots, underscores or hyphens alone,
+the object is a recognized video, and its size differs from the database record
+by no more than 1 MiB. Jellyfin:
 
 1. refreshes and resolves the exact OpenList object;
 2. verifies that its extension is recognized by current naming options;
 3. probes the internal signed download URI through `IMediaEncoder`;
 4. returns current and replacement size, duration, bitrate, container,
    resolution and streams;
-5. stores an immutable preview token for 30 minutes.
+5. stores the verified actual original path in the immutable preview and
+   rollback snapshot;
+6. stores an immutable preview token for 30 minutes.
 
 At most two replacement probes run concurrently. This limit is separate from
 the serialized new-media probe queue.
 
 `Apply` consumes the preview once and acquires a lock for that Item ID. It
-requires the Jellyfin path to remain unchanged, the replacement size and
-modification time to match the preview, and the replacement to be in the same
-OpenList directory as the current video. It then:
+requires the Jellyfin database path to remain unchanged, the replacement size
+and modification time to match the preview, and the replacement to be in the
+same OpenList directory as the verified actual original video. It then:
 
 - replaces the path, size, duration, bitrate, container, width, height and
   default video stream on the existing Video record;

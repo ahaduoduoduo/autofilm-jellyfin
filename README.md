@@ -93,7 +93,10 @@ replacement through the normal media encoder, and atomically updates the
 existing Video path and media streams. It preserves external subtitle streams
 and all item/user metadata. Apply is restricted to a replacement file already
 moved into the original media directory and returns a short-lived rollback
-snapshot for automatic failure recovery.
+snapshot for automatic failure recovery. A preview may also carry a Core-resolved
+legacy original path; Jellyfin independently accepts it only when the complete
+path differs by separators alone and the file size differs by no more than
+1 MiB.
 
 `Dockerfile.autofilm` builds both this server and the
 `ahaduoduoduo/autofilm-jellyfin-web` source tree. The resulting image serves
