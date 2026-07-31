@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Emby.Naming.Common;
 using Emby.Naming.TV;
 using Emby.Naming.Video;
+using MediaBrowser.Common;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -18,6 +19,7 @@ using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.MediaInfo;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.AutoFilm;
 
@@ -42,6 +44,7 @@ public sealed class AutoFilmMediaReplacementService
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IAutoFilmOpenListClient _openListClient;
     private readonly NamingOptions _namingOptions;
+    private readonly ILogger<AutoFilmMediaReplacementService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the
@@ -52,18 +55,21 @@ public sealed class AutoFilmMediaReplacementService
     /// <param name="mediaEncoder">Jellyfin media probing service.</param>
     /// <param name="openListClient">OpenList object and download API client.</param>
     /// <param name="namingOptions">Configured Jellyfin media naming options.</param>
+    /// <param name="logger">Service logger.</param>
     public AutoFilmMediaReplacementService(
         ILibraryManager libraryManager,
         IMediaStreamRepository mediaStreamRepository,
         IMediaEncoder mediaEncoder,
         IAutoFilmOpenListClient openListClient,
-        NamingOptions namingOptions)
+        NamingOptions namingOptions,
+        ILogger<AutoFilmMediaReplacementService> logger)
     {
         _libraryManager = libraryManager;
         _mediaStreamRepository = mediaStreamRepository;
         _mediaEncoder = mediaEncoder;
         _openListClient = openListClient;
         _namingOptions = namingOptions;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -334,20 +340,39 @@ public sealed class AutoFilmMediaReplacementService
         AutoFilmOpenListObject replacementObject,
         CancellationToken cancellationToken)
     {
-        return await _mediaEncoder.GetMediaInfo(
-            new MediaInfoRequest
+        const int maxAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
             {
-                ExtractChapters = false,
-                MediaType = DlnaProfileType.Video,
-                MediaSource = new MediaSourceInfo
-                {
-                    Path = _openListClient.GetInternalDownloadUri(replacementObject).ToString(),
-                    Protocol = MediaProtocol.Http,
-                    IsRemote = true,
-                    VideoType = video.VideoType
-                }
-            },
-            cancellationToken).ConfigureAwait(false);
+                return await _mediaEncoder.GetMediaInfo(
+                    new MediaInfoRequest
+                    {
+                        ExtractChapters = false,
+                        MediaType = DlnaProfileType.Video,
+                        MediaSource = new MediaSourceInfo
+                        {
+                            Path = _openListClient.GetInternalDownloadUri(replacementObject).ToString(),
+                            Protocol = MediaProtocol.Http,
+                            IsRemote = true,
+                            VideoType = video.VideoType
+                        }
+                    },
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (FfmpegException ex) when (attempt < maxAttempts)
+            {
+                var delay = TimeSpan.FromSeconds(attempt == 1 ? 3 : 8);
+                _logger.LogWarning(
+                    ex,
+                    "AutoFilm replacement probe attempt {Attempt}/{MaxAttempts} failed for {Path}; retrying after {Delay}",
+                    attempt,
+                    maxAttempts,
+                    replacementObject.Path,
+                    delay);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
 
     private void AddCandidate(

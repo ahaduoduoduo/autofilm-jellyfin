@@ -4,6 +4,9 @@ Updated: 2026-07-31
 
 ## Completed
 
+- [x] 2026-07-31: Retry an exact replacement ffprobe after temporary
+  `FfmpegException` failures, with three total attempts and bounded delays;
+  cancellation and other failures remain immediate.
 - [x] 2026-07-31: Add bounded, read-only replacement discovery using
   Jellyfin's configured `VideoResolver` and `EpisodeResolver`, without creating
   library records.

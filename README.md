@@ -95,7 +95,9 @@ replacement through the normal media encoder, and atomically updates the
 existing Video path and media streams. It preserves external subtitle streams
 and all item/user metadata. Apply is restricted to a replacement file already
 moved into the original media directory and returns a short-lived rollback
-snapshot for automatic failure recovery.
+snapshot for automatic failure recovery. Replacement ffprobe retries a
+temporary `FfmpegException` at most twice after the first attempt, with bounded
+delays, while all other errors fail immediately.
 
 `Dockerfile.autofilm` builds both this server and the
 `ahaduoduoduo/autofilm-jellyfin-web` source tree. The resulting image serves

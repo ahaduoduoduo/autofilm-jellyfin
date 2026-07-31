@@ -45,6 +45,10 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmMediaReplacementService.cs`
   - Uses the configured Jellyfin naming rules to inspect completed OpenList
     results and the normal media encoder to probe an exact replacement.
+  - Limits replacement probes to two concurrent operations and retries only
+    `FfmpegException` failures, for at most three total attempts with bounded
+    delays, to tolerate a temporary remote read reset without unbounded 115
+    requests.
   - Applies under a per-item lock after revalidating both paths and file facts;
     updates the existing Video and internal streams, keeps current external
     subtitle streams, and restores the previous snapshot on write failure.

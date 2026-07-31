@@ -144,7 +144,10 @@ target must be an OpenList-backed Video. Jellyfin:
 5. stores an immutable preview token for 30 minutes.
 
 At most two replacement probes run concurrently. This limit is separate from
-the serialized new-media probe queue.
+the serialized new-media probe queue. A probe that throws `FfmpegException`
+is retried after 3 and 8 seconds, for at most three total attempts. This is a
+finite replacement-only retry; cancellation and other exception types are not
+retried, and the global new-media probe policy is unchanged.
 
 `Apply` consumes the preview once and acquires a lock for that Item ID. It
 requires the Jellyfin path to remain unchanged, the replacement size and
