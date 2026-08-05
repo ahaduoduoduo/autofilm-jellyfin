@@ -95,5 +95,42 @@ namespace Jellyfin.Api.Tests.Helpers
 
             Assert.Equal(directPlay.Id, result.MediaSources[0].Id);
         }
+
+        [Fact]
+        public void ApplyAutoFilmDirectPlayOnly_RemoteSource_RemovesTranscodingCapability()
+        {
+            var source = CreateSource(Guid.NewGuid(), bitrate: 80_000_000, supportsDirectPlay: false);
+            source.Id = "autofilm:" + source.Id;
+            source.SupportsProbing = true;
+            source.TranscodingUrl = "/videos/item/master.m3u8";
+            source.TranscodingContainer = "ts";
+
+            MediaInfoHelper.ApplyAutoFilmDirectPlayOnly(source);
+
+            Assert.True(source.SupportsDirectPlay);
+            Assert.False(source.SupportsDirectStream);
+            Assert.False(source.SupportsTranscoding);
+            Assert.False(source.SupportsProbing);
+            Assert.Null(source.TranscodingUrl);
+            Assert.Null(source.TranscodingContainer);
+        }
+
+        [Fact]
+        public void ApplyAutoFilmDirectPlayOnly_LocalSource_LeavesPlaybackCapabilityUnchanged()
+        {
+            var source = CreateSource(Guid.NewGuid(), bitrate: 80_000_000, supportsDirectPlay: false);
+            source.SupportsProbing = true;
+            source.TranscodingUrl = "/videos/item/master.m3u8";
+            source.TranscodingContainer = "ts";
+
+            MediaInfoHelper.ApplyAutoFilmDirectPlayOnly(source);
+
+            Assert.False(source.SupportsDirectPlay);
+            Assert.True(source.SupportsDirectStream);
+            Assert.True(source.SupportsTranscoding);
+            Assert.True(source.SupportsProbing);
+            Assert.Equal("/videos/item/master.m3u8", source.TranscodingUrl);
+            Assert.Equal("ts", source.TranscodingContainer);
+        }
     }
 }

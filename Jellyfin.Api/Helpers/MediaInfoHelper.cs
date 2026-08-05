@@ -14,6 +14,7 @@ using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Entities;
@@ -335,6 +336,8 @@ public class MediaInfoHelper
             mediaSource.DefaultAudioStreamIndex = streamInfo.AudioStreamIndex;
         }
 
+        ApplyAutoFilmDirectPlayOnly(mediaSource);
+
         foreach (var attachment in mediaSource.MediaAttachments)
         {
             attachment.DeliveryUrl = string.Format(
@@ -344,6 +347,23 @@ public class MediaInfoHelper
                 mediaSource.Id,
                 attachment.Index);
         }
+    }
+
+    internal static void ApplyAutoFilmDirectPlayOnly(MediaSourceInfo mediaSource)
+    {
+        if (mediaSource.Id?.StartsWith(
+                AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
+                StringComparison.Ordinal) != true)
+        {
+            return;
+        }
+
+        mediaSource.SupportsDirectPlay = true;
+        mediaSource.SupportsDirectStream = false;
+        mediaSource.SupportsTranscoding = false;
+        mediaSource.SupportsProbing = false;
+        mediaSource.TranscodingUrl = null;
+        mediaSource.TranscodingContainer = null;
     }
 
     /// <summary>
