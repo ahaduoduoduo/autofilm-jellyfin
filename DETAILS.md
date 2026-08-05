@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-08-05
+Updated: 2026-08-06
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
@@ -9,6 +9,8 @@ responsibility:
   - Provider-neutral remote path, refresh, subtitle, and probe
     interfaces.
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
+  - `AutoFilmRemoteScanMode.cs` validates the additive `new` and database
+    reconciliation `full` modes.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
   - `AutoFilmSubtitleCompatibility.cs` normalizes external SUP responses.
   - `IAutoFilmMediaReplacementService.cs` and
@@ -40,6 +42,14 @@ responsibility:
     videos through the serialized remote probe queue.
   - When `provider_target` is `movie`, applies provider IDs to the only direct
     video in a result directory; series refreshes retain folder-level behavior.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
+  - Runs only for an explicit full rescan after a fresh bounded snapshot was
+    loaded successfully.
+  - Removes stale Jellyfin database descendants with `DeleteFileLocation=false`
+    and recreates incorrectly typed folders or videos through Jellyfin's normal
+    resolvers.
+  - Reuses provider IDs and core metadata, reroutes collection references, and
+    reattaches user data after an item type change.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
 - `Jellyfin.Api/Controllers/ItemRefreshController.cs`
@@ -112,8 +122,7 @@ responsibility:
     source context, then packages both with the base image's FFmpeg runtime.
 
 Installation-specific database migration and legacy subtitle reverse lookup are
-kept only in the `codex/personal-legacy-compat` branch. They are intentionally
-absent from the default branch and its public module surface.
+absent from the maintained public branch and its module surface.
 
 Detailed configuration and behavior are in
 `docs/autofilm-remote-media.md`.

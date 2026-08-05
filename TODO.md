@@ -1,8 +1,16 @@
 # AutoFilm development status
 
-Updated: 2026-08-05
+Updated: 2026-08-06
 
 ## Completed
+
+- [x] 2026-08-06: Add explicit additive and full OpenList scan modes. Full
+  rescans require a fresh bounded snapshot, remove database-only descendants,
+  correct item types through normal Jellyfin resolvers, and never delete
+  OpenList files.
+- [x] 2026-08-06: Resolve newly selected OpenList video files and movie
+  directories with their inherited Jellyfin collection type instead of
+  defaulting to a generic Video or Folder.
 
 - [x] 2026-08-05: Enforce direct-play-only playback for `autofilm:` OpenList
   media after device-profile calculation and omit generated transcoding URLs,
@@ -74,8 +82,8 @@ Updated: 2026-08-05
   HTTP range support instead of invoking Jellyfin's subtitle encoder.
 - [x] 2026-07-28: Build the forked jellyfin-web source and package it with the
   modified server in one runtime image.
-- [x] 2026-07-28: Isolate installation-specific database migration and legacy
-  subtitle reverse lookup in `codex/personal-legacy-compat`.
+- [x] 2026-07-28: Remove installation-specific database migration and legacy
+  subtitle reverse lookup from the maintained public branch.
 - [x] 2026-07-28: Keep the default branch free of legacy path configuration,
   migration APIs, and local fallback upload behavior.
 - [x] 2026-07-30: Use Jellyfin's standard subtitle upload and delete endpoints

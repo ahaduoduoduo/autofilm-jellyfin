@@ -98,6 +98,30 @@ internal sealed class AutoFilmDirectorySnapshot : IDirectoryService
         return GetFilePaths(path);
     }
 
+    /// <summary>
+    /// Gets every loaded entry at or below a remote path.
+    /// </summary>
+    /// <param name="remotePath">Normalized OpenList URI.</param>
+    /// <param name="includeRoot">Whether to include the root entry.</param>
+    /// <returns>The bounded snapshot entries.</returns>
+    public IReadOnlyList<FileSystemMetadata> GetEntriesWithin(
+        string remotePath,
+        bool includeRoot = false)
+    {
+        var prefix = remotePath.EndsWith("/", StringComparison.Ordinal)
+            ? remotePath
+            : remotePath + "/";
+        return _entries.Values
+            .Where(entry => (includeRoot
+                    && string.Equals(
+                        entry.FullName,
+                        remotePath,
+                        StringComparison.Ordinal))
+                || entry.FullName.StartsWith(prefix, StringComparison.Ordinal))
+            .OrderBy(entry => entry.FullName, StringComparer.Ordinal)
+            .ToArray();
+    }
+
     /// <inheritdoc />
     public bool IsAccessible(string path)
     {

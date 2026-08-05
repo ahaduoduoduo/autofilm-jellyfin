@@ -33,6 +33,13 @@ public sealed record AutoFilmRemoteRefreshRequest
     public bool ForceProbe { get; init; }
 
     /// <summary>
+    /// Gets the scan mode: <c>new</c> adds missing items, while <c>full</c>
+    /// reconciles the selected path with a fresh OpenList snapshot.
+    /// </summary>
+    [JsonPropertyName("scan_mode")]
+    public string ScanMode { get; init; } = AutoFilmRemoteScanMode.New;
+
+    /// <summary>
     /// Gets optional metadata provider identifiers such as Tmdb or Imdb.
     /// </summary>
     [JsonPropertyName("provider_ids")]

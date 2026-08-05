@@ -1,6 +1,6 @@
 # AutoFilm remote media behavior
 
-Updated: 2026-08-05
+Updated: 2026-08-06
 
 ## Persistent model
 
@@ -75,6 +75,7 @@ Content-Type: application/json
   "recursive": false,
   "refresh": false,
   "force_probe": false,
+  "scan_mode": "new",
   "provider_target": "movie",
   "provider_ids": {
     "Tmdb": "123"
@@ -112,10 +113,10 @@ episode, season directory, or multi-season directory therefore receives all
 of its episode records during its first explicit refresh. The same operation
 also restores episodes lost during an earlier provider outage.
 
-The operation is additive: records absent from the current OpenList snapshot
-are preserved rather than deleted, because a remote storage outage must not be
-interpreted as a confirmed media deletion. Every discovered video also
-receives its normal metadata refresh. Episode number parsing accepts the
+The default `scan_mode: new` operation is additive: records absent from the
+current OpenList snapshot are preserved rather than deleted, because a remote
+storage outage must not be interpreted as a confirmed media deletion. Every
+discovered video also receives its normal metadata refresh. Episode number parsing accepts the
 underlying OpenList path, so names such as `The.Capture.S03E01.mkv` populate
 season and episode indexes in the same way as local files.
 
@@ -264,16 +265,23 @@ Jellyfin. AutoFilm Core calls `RemoteRefresh` after a completed new-media
 download. Existing-media upgrades use the explicit replacement API above.
 An OpenList administrator may explicitly request the same operation for a
 selected path. Administrators can also select **Scan OpenList content** from
-the Jellyfin item menu for an existing OpenList folder. The explicit action
-requests a refreshed recursive snapshot and adds missing descendants without
-deleting existing records. Jellyfin does not poll OpenList.
+the Jellyfin item menu for an OpenList movie or series. The dialog exposes two
+modes:
 
-## Personal compatibility branch
+- **Scan for new content** sends `scan_mode: new`. It adds missing items and
+  does not remove existing Jellyfin records.
+- **Full rescan** sends `scan_mode: full`, forces a fresh recursive OpenList
+  snapshot, removes descendants that exist only in Jellyfin, and recreates
+  incorrectly typed records with the library's configured Movie or TV
+  resolvers. It never requests deletion of an OpenList object.
 
-The default branch does not contain database path migration or legacy subtitle
-reverse lookup. The installation-specific implementation remains in
-`codex/personal-legacy-compat`; it keeps the batch path migration endpoints and
-the read-only local subtitle fallback with serialized lazy upload.
+A full rescan is refused when OpenList reports an empty selected directory but
+Jellyfin still contains descendants below it. This prevents an empty provider
+response from being interpreted as confirmed deletion. All refreshes retain
+the configured directory and object limits. Jellyfin does not poll OpenList.
+
+The maintained public branch does not contain installation-specific database
+path migration or legacy subtitle reverse lookup.
 
 ## Deletion
 

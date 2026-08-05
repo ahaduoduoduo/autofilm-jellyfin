@@ -68,10 +68,9 @@ download; Jellyfin does not poll. Existing-media upgrades use the separate
 MediaReplacement API to keep the original Item ID and never run the new-item
 import or metadata-provider path.
 
-The default branch contains no installation-specific database migration or
-legacy subtitle path fallback. Those compatibility features are isolated in
-`codex/personal-legacy-compat`. The default implementation provides remote
-subtitle reads, stale subtitle removal, new remote subtitle uploads, and
+The maintained public branch contains no installation-specific database
+migration or legacy subtitle path fallback. The default implementation provides
+remote subtitle reads, stale subtitle removal, new remote subtitle uploads, and
 path-based remote deletion before the Jellyfin item is removed. Jellyfin's
 standard subtitle API is the common entry point for local and OpenList media;
 remote uploads use the same language naming and numbered collision behavior as
@@ -84,9 +83,12 @@ seasons and media-library roots remain non-deletable.
 Media library sources can be `Local` or `OpenList`. OpenList roots are stored
 as normal Jellyfin `PathInfos` and `.mblink` targets using `openlist:///`;
 standard filesystem scans and realtime watchers do not enumerate them.
-Explicit `RemoteRefresh` requests discover remote objects. OpenList file
-mutations do not alter the Jellyfin library automatically. External `.sup`
-streams are reported directly as
+Explicit `RemoteRefresh` requests discover remote objects. Its default
+`scan_mode: new` behavior is additive. Administrator-requested
+`scan_mode: full` uses a fresh bounded snapshot to remove stale database-only
+descendants and correct previously misclassified remote items without deleting
+OpenList files. OpenList file mutations do not alter the Jellyfin library
+automatically. External `.sup` streams are reported directly as
 externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
 while local external SUP files are returned unchanged with HTTP range support.
 Playback and subtitle URL rewriting no longer requires an Nginx compatibility

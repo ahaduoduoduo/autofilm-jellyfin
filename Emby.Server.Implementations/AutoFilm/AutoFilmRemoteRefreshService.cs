@@ -19,6 +19,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
     private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
     private readonly IAutoFilmOpenListClient _openListClient;
+    private readonly AutoFilmRemoteReconciler _reconciler;
     private readonly IAutoFilmRemoteProbeQueue _probeQueue;
     private readonly IAutoFilmRemoteLibraryRoots _remoteLibraryRoots;
     private readonly AutoFilmOptions _options;
@@ -30,6 +31,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
     /// <param name="libraryManager">Jellyfin library manager.</param>
     /// <param name="providerManager">Jellyfin metadata provider manager.</param>
     /// <param name="openListClient">OpenList path API.</param>
+    /// <param name="reconciler">Full remote database reconciliation.</param>
     /// <param name="probeQueue">Serialized remote ffprobe queue.</param>
     /// <param name="remoteLibraryRoots">Configured OpenList library roots.</param>
     /// <param name="options">AutoFilm configuration.</param>
@@ -37,6 +39,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         ILibraryManager libraryManager,
         IProviderManager providerManager,
         IAutoFilmOpenListClient openListClient,
+        AutoFilmRemoteReconciler reconciler,
         IAutoFilmRemoteProbeQueue probeQueue,
         IAutoFilmRemoteLibraryRoots remoteLibraryRoots,
         AutoFilmOptions options)
@@ -44,6 +47,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         _libraryManager = libraryManager;
         _providerManager = providerManager;
         _openListClient = openListClient;
+        _reconciler = reconciler;
         _probeQueue = probeQueue;
         _remoteLibraryRoots = remoteLibraryRoots;
         _options = options;
@@ -55,6 +59,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var scanMode = AutoFilmRemoteScanMode.Normalize(request.ScanMode);
+        var fullScan = string.Equals(
+            scanMode,
+            AutoFilmRemoteScanMode.Full,
+            StringComparison.Ordinal);
         var openListPath = NormalizeRequestPath(request.Path);
         var libraryRoot = _remoteLibraryRoots.FindRoot(openListPath)
             ?? throw new ArgumentException(
@@ -83,18 +92,21 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         var load = await LoadSnapshotAsync(
             firstPath,
             openListPath,
-            request.Refresh,
-            request.Recursive,
+            request.Refresh || fullScan,
+            request.Recursive || fullScan,
             cancellationToken).ConfigureAwait(false);
 
         if (existing is not null)
         {
+            var targetEntry = load.Snapshot.GetFileSystemEntry(remotePath);
             var destinationParent = parent is null
                 ? null
-                : EnsureParentHierarchy(
-                    parent,
-                    GetParentPath(openListPath),
-                    load.Snapshot);
+                : targetEntry?.IsDirectory == false
+                    ? parent
+                    : EnsureParentHierarchy(
+                        parent,
+                        GetParentPath(openListPath),
+                        load.Snapshot);
             if (destinationParent is not null
                 && !existing.ParentId.Equals(destinationParent.Id))
             {
@@ -104,16 +116,25 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     cancellationToken).ConfigureAwait(false);
             }
 
+            var reconcile = fullScan
+                ? await _reconciler.ReconcileAsync(
+                    existing,
+                    destinationParent ?? parent,
+                    load.Snapshot,
+                    cancellationToken).ConfigureAwait(false)
+                : AutoFilmRemoteReconcileResult.Empty(existing);
             var providerTarget = await ProcessResolvedItemAsync(
-                existing,
+                reconcile.Item,
                 request,
                 load.Snapshot,
                 cancellationToken).ConfigureAwait(false);
             return CreateResult(
-                "refreshed",
+                fullScan ? "rescanned" : "refreshed",
+                scanMode,
                 providerTarget,
                 load,
-                remotePath);
+                remotePath,
+                reconcile);
         }
 
         var currentParent = parent!;
@@ -139,14 +160,26 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 resolvedItem = _libraryManager.ResolvePath(
                     fileInfo,
                     currentParent,
-                    load.Snapshot);
+                    load.Snapshot,
+                    _libraryManager.GetContentType(currentParent));
                 if (resolvedItem is null)
                 {
                     throw new InvalidOperationException(
                         $"Jellyfin could not resolve remote path '{path}'.");
                 }
 
-                _libraryManager.CreateItem(resolvedItem, currentParent);
+                var persisted = _libraryManager.GetItemById(resolvedItem.Id)
+                    ?? _libraryManager.FindByPath(
+                        resolvedItem.Path,
+                        resolvedItem.IsFolder);
+                if (persisted is null)
+                {
+                    _libraryManager.CreateItem(resolvedItem, currentParent);
+                }
+                else
+                {
+                    resolvedItem = persisted;
+                }
             }
 
             if (string.Equals(path, openListPath, StringComparison.Ordinal)
@@ -169,7 +202,13 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             request,
             load.Snapshot,
             cancellationToken).ConfigureAwait(false);
-        return CreateResult("created", resolvedItem, load, remotePath);
+        return CreateResult(
+            "created",
+            scanMode,
+            resolvedItem,
+            load,
+            remotePath,
+            AutoFilmRemoteReconcileResult.Empty(resolvedItem));
     }
 
     private async Task<BaseItem> ProcessResolvedItemAsync(
@@ -241,7 +280,8 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 resolved = _libraryManager.ResolvePath(
                     fileInfo,
                     currentParent,
-                    snapshot)
+                    snapshot,
+                    _libraryManager.GetContentType(currentParent))
                     ?? throw new InvalidOperationException(
                         $"Jellyfin could not resolve remote parent '{path}'.");
                 _libraryManager.CreateItem(resolved, currentParent);
@@ -292,7 +332,8 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     item = _libraryManager.ResolvePath(
                         entry,
                         currentParent,
-                        snapshot);
+                        snapshot,
+                        _libraryManager.GetContentType(currentParent));
                     if (item is null)
                     {
                         continue;
@@ -569,7 +610,8 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     Item: existing ?? _libraryManager.ResolvePath(
                         entry,
                         folder,
-                        snapshot),
+                        snapshot,
+                        _libraryManager.GetContentType(folder)),
                     Exists: existing is not null);
             })
             .Where(candidate => candidate.Item is Video)
@@ -659,18 +701,23 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
     private static AutoFilmRemoteRefreshResult CreateResult(
         string action,
+        string scanMode,
         BaseItem item,
         SnapshotLoadResult load,
-        string requestedPath)
+        string requestedPath,
+        AutoFilmRemoteReconcileResult reconcile)
     {
         return new AutoFilmRemoteRefreshResult(
             action,
+            scanMode,
             item.Id,
             item.Name,
             item.GetType().Name,
             requestedPath,
             load.DirectoriesRead,
-            load.ObjectsRead);
+            load.ObjectsRead,
+            reconcile.RemovedItems,
+            reconcile.ReclassifiedItems);
     }
 
     private sealed record SnapshotLoadResult(
