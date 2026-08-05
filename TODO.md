@@ -1,8 +1,12 @@
 # AutoFilm development status
 
-Updated: 2026-07-31
+Updated: 2026-08-05
 
 ## Completed
+
+- [x] 2026-08-05: Enforce direct-play-only playback for `autofilm:` OpenList
+  media after device-profile calculation and omit generated transcoding URLs,
+  without changing local-media transcoding behavior.
 
 - [x] 2026-07-31: Make Jellyfin's standard administrator metadata refresh
   enqueue an OpenList Movie/Episode for remote probing when its embedded video

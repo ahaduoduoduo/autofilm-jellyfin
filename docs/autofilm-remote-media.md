@@ -201,7 +201,12 @@ paths containing Chinese or other non-ASCII names therefore remain
 percent-encoded and are valid HTTP response headers.
 
 The generated media source is HTTP, direct-play-only, and reports existing
-Jellyfin `MediaStreams`. Transcoding is disabled.
+Jellyfin `MediaStreams`. After the standard device-profile calculation,
+`MediaInfoHelper` restores the direct-play-only flags for media source IDs with
+the `autofilm:` prefix and clears any generated `TranscodingUrl` and
+transcoding container. Third-party clients therefore receive no usable
+transcoding variant for OpenList media. Local media continues through
+Jellyfin's standard playback capability calculation and may be transcoded.
 
 ## Subtitles
 

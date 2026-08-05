@@ -90,7 +90,10 @@ streams are reported directly as
 externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
 while local external SUP files are returned unchanged with HTTP range support.
 Playback and subtitle URL rewriting no longer requires an Nginx compatibility
-layer.
+layer. After Jellyfin applies the requesting device profile, AutoFilm OpenList
+media sources are forced back to direct-play-only and expose no transcoding
+URL. Local media sources keep Jellyfin's standard direct-stream and transcoding
+capability calculation.
 
 The authenticated MediaReplacement API inspects a completed OpenList result
 with Jellyfin's own video and episode naming rules, probes one exact

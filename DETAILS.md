@@ -75,6 +75,11 @@ responsibility:
 - `Jellyfin.Api/Helpers/AutoFilmRedirectHelper.cs`
   - Produces ASCII-safe `Location` values for video and remote subtitle 302
     responses, including paths with non-ASCII names.
+- `Jellyfin.Api/Helpers/MediaInfoHelper.cs`
+  - Applies the normal Jellyfin device-profile calculation, then enforces the
+    final direct-play-only invariant for `autofilm:` OpenList media sources and
+    removes any generated transcoding URL. Local media keeps upstream playback
+    capability behavior.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`
