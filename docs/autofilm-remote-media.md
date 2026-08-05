@@ -1,6 +1,6 @@
 # AutoFilm remote media behavior
 
-Updated: 2026-07-31
+Updated: 2026-08-05
 
 ## Persistent model
 
@@ -299,6 +299,5 @@ Series and Season deletion is reserved for Jellyfin's user interface.
 
 - Real 115 delete, move, and bulk subtitle upload tests require a dedicated test
   directory.
-- Legacy media and subtitle mounts are read-only compatibility inputs for
-  migration; rclone, symlink and Nginx services are not part of the active
-  deployment.
+- The default branch does not read legacy media or subtitle mounts; rclone,
+  symlink and Nginx services are not part of the remote-media design.

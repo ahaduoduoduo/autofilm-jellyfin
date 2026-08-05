@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-07-31
+Updated: 2026-08-05
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
