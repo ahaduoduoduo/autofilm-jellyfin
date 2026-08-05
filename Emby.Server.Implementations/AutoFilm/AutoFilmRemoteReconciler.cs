@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
@@ -283,21 +284,4 @@ public sealed class AutoFilmRemoteReconciler
         destination.Studios = source.Studios?.ToArray() ?? Array.Empty<string>();
         destination.Tags = source.Tags?.ToArray() ?? Array.Empty<string>();
     }
-}
-
-/// <summary>
-/// Result of one database reconciliation.
-/// </summary>
-/// <param name="Item">Current Jellyfin target.</param>
-/// <param name="RemovedItems">Removed stale database items.</param>
-/// <param name="ReclassifiedItems">Items recreated with the correct Jellyfin type.</param>
-internal sealed record AutoFilmRemoteReconcileResult(
-    BaseItem Item,
-    int RemovedItems,
-    int ReclassifiedItems)
-{
-    /// <summary>
-    /// Gets an empty reconciliation result.
-    /// </summary>
-    public static AutoFilmRemoteReconcileResult Empty(BaseItem item) => new(item, 0, 0);
 }

@@ -108,7 +108,7 @@ internal sealed class AutoFilmDirectorySnapshot : IDirectoryService
         string remotePath,
         bool includeRoot = false)
     {
-        var prefix = remotePath.EndsWith("/", StringComparison.Ordinal)
+        var prefix = remotePath.EndsWith('/')
             ? remotePath
             : remotePath + "/";
         return _entries.Values
