@@ -216,23 +216,40 @@ namespace MediaBrowser.Controller.Entities.TV
         public Guid FindSeasonId()
         {
             var season = FindParent<Season>();
+            var series = Series;
 
-            // Episodes directly in series folder
-            if (season is null)
-            {
-                var series = Series;
-
-                if (series is not null && ParentIndexNumber.HasValue)
-                {
-                    var findNumber = ParentIndexNumber.Value;
-
-                    season = series.Children
-                        .OfType<Season>()
-                        .FirstOrDefault(i => i.IndexNumber.HasValue && i.IndexNumber.Value == findNumber);
-                }
-            }
+            season = ResolveSeasonByNumber(
+                season,
+                series,
+                ParentIndexNumber);
 
             return season is null ? Guid.Empty : season.Id;
+        }
+
+        /// <summary>
+        /// Uses the logical numbered season when a physical wrapper directory was classified as
+        /// a different season.
+        /// </summary>
+        /// <param name="physicalSeason">The season found in the physical parent hierarchy.</param>
+        /// <param name="series">The owning series.</param>
+        /// <param name="seasonNumber">The parsed episode season number.</param>
+        /// <returns>The season that should own the episode for display purposes.</returns>
+        internal static Season ResolveSeasonByNumber(
+            Season physicalSeason,
+            Series series,
+            int? seasonNumber)
+        {
+            if (series is null
+                || !seasonNumber.HasValue
+                || physicalSeason?.IndexNumber == seasonNumber)
+            {
+                return physicalSeason;
+            }
+
+            return series.Children
+                .OfType<Season>()
+                .FirstOrDefault(candidate => candidate.IndexNumber == seasonNumber)
+                ?? physicalSeason;
         }
 
         /// <summary>

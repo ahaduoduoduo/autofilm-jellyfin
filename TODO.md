@@ -99,6 +99,8 @@ Updated: 2026-08-10
   Season and Episode metadata after the Series identity is saved.
 - [x] 2026-08-10: Replace scanner-derived Episode filenames with provider
   titles after exact remote television imports.
+- [x] 2026-08-10: Preserve logical Episode season ownership when a physical
+  multi-season wrapper directory was initially classified as Season 1.
 
 ## Planned
 

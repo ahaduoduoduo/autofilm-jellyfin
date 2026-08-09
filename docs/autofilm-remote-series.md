@@ -28,6 +28,11 @@ passed through Jellyfin's standard episode-path parser. The resulting
 seasons and assign each Episode to the correct season even when physical
 directories contain an additional release-name layer.
 
+Episode metadata refreshes prefer the logical season matching the parsed
+season number when the physical parent was classified as a different Season.
+This prevents a multi-season wrapper directory from reclaiming every Episode
+after provider metadata has been refreshed.
+
 Requests that include provider identifiers use a full provider refresh. The
 Series is queued at high priority; existing Seasons and discovered Episodes
 are queued at normal priority so previously empty metadata is fetched after
