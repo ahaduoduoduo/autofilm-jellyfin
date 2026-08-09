@@ -101,6 +101,8 @@ Updated: 2026-08-10
   titles after exact remote television imports.
 - [x] 2026-08-10: Preserve logical Episode season ownership when a physical
   multi-season wrapper directory was initially classified as Season 1.
+- [x] 2026-08-10: Count Season children and playback state by logical
+  `SeasonId` instead of a multi-season wrapper's physical descendants.
 
 ## Planned
 

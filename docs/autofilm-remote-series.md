@@ -33,6 +33,10 @@ season number when the physical parent was classified as a different Season.
 This prevents a multi-season wrapper directory from reclaiming every Episode
 after provider metadata has been refreshed.
 
+Season child, recursive, played, and unplayed counts use each Episode's
+logical `SeasonId`. A physical multi-season wrapper can therefore remain in
+the path hierarchy without inflating the first season's card statistics.
+
 Requests that include provider identifiers use a full provider refresh. The
 Series is queued at high priority; existing Seasons and discovered Episodes
 are queued at normal priority so previously empty metadata is fetched after

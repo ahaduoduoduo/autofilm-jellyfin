@@ -312,12 +312,22 @@ public class ItemCountService : IItemCountService
         using var dbContext = _dbProvider.CreateDbContext();
 
         var parentIdsArray = parentIds.ToArray();
+        var seasonIds = GetRequestedSeasonIds(dbContext, parentIdsArray);
+        var seasonIdSet = seasonIds.ToHashSet();
 
         var hierarchicalCounts = dbContext.BaseItems
             .Where(b => b.ParentId.HasValue && parentIdsArray.Contains(b.ParentId.Value))
             .GroupBy(b => b.ParentId!.Value)
             .Select(g => new { ParentId = g.Key, Count = g.Count() })
             .ToDictionary(x => x.ParentId, x => x.Count);
+
+        var logicalSeasonCounts = dbContext.BaseItems
+            .Where(item => !item.IsFolder
+                && item.SeasonId.HasValue
+                && seasonIds.Contains(item.SeasonId.Value))
+            .GroupBy(item => item.SeasonId!.Value)
+            .Select(group => new { SeasonId = group.Key, Count = group.Count() })
+            .ToDictionary(entry => entry.SeasonId, entry => entry.Count);
 
         var linkedCounts = dbContext.LinkedChildren
             .Where(lc => parentIdsArray.Contains(lc.ParentId))
@@ -328,6 +338,12 @@ public class ItemCountService : IItemCountService
         var result = new Dictionary<Guid, int>();
         foreach (var parentId in parentIds)
         {
+            if (seasonIdSet.Contains(parentId))
+            {
+                result[parentId] = logicalSeasonCounts.GetValueOrDefault(parentId, 0);
+                continue;
+            }
+
             var hierarchicalCount = hierarchicalCounts.GetValueOrDefault(parentId, 0);
             var linkedCount = linkedCounts.GetValueOrDefault(parentId, 0);
 
@@ -350,6 +366,7 @@ public class ItemCountService : IItemCountService
 
         using var dbContext = _dbProvider.CreateDbContext();
         var folderIdsArray = folderIds.ToArray();
+        var seasonIds = GetRequestedSeasonIds(dbContext, folderIdsArray);
         var filter = new InternalItemsQuery(user);
         var userId = user.Id;
 
@@ -358,7 +375,12 @@ public class ItemCountService : IItemCountService
         leafItems = _queryHelpers.ApplyAccessFiltering(dbContext, leafItems, filter);
 
         var playedLeafItems = leafItems
-            .Select(b => new { b.Id, Played = b.UserData!.Any(ud => ud.UserId == userId && ud.Played) });
+            .Select(b => new
+            {
+                b.Id,
+                b.SeasonId,
+                Played = b.UserData!.Any(ud => ud.UserId == userId && ud.Played)
+            });
 
         var ancestorLeaves = dbContext.AncestorIds
             .WhereOneOrMany(folderIdsArray, a => a.ParentItemId)
@@ -406,7 +428,36 @@ public class ItemCountService : IItemCountService
             })
             .ToDictionary(x => x.FolderId, x => (x.Played, x.Total));
 
+        var logicalSeasonResults = playedLeafItems
+            .Where(item => item.SeasonId.HasValue
+                && seasonIds.Contains(item.SeasonId.Value))
+            .GroupBy(item => item.SeasonId!.Value)
+            .Select(group => new
+            {
+                SeasonId = group.Key,
+                Total = group.Count(),
+                Played = group.Count(item => item.Played)
+            })
+            .ToDictionary(entry => entry.SeasonId, entry => (entry.Played, entry.Total));
+
+        foreach (var seasonId in seasonIds)
+        {
+            results[seasonId] = logicalSeasonResults.GetValueOrDefault(seasonId, (0, 0));
+        }
+
         return results;
+    }
+
+    private Guid[] GetRequestedSeasonIds(
+        JellyfinDbContext dbContext,
+        Guid[] requestedIds)
+    {
+        var seasonTypeName = _itemTypeLookup.BaseItemKindNames[BaseItemKind.Season];
+        return dbContext.BaseItems
+            .Where(item => requestedIds.Contains(item.Id)
+                && item.Type == seasonTypeName)
+            .Select(item => item.Id)
+            .ToArray();
     }
 
     private static (int Played, int Total) GetPlayedAndTotalCountFromQuery(IQueryable<BaseItemEntity> query, Guid userId)
