@@ -95,6 +95,8 @@ Updated: 2026-08-10
 - [x] 2026-08-10: Resolve nested OpenList television refreshes to their owning
   Series, move previously misplaced matching provider IDs off a Season, and
   persist parsed episode season numbers before the Series metadata refresh.
+- [x] 2026-08-10: Force provider-backed remote refreshes to revisit existing
+  Season and Episode metadata after the Series identity is saved.
 
 ## Planned
 

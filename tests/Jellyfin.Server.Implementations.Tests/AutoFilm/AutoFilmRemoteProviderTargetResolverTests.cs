@@ -4,6 +4,7 @@ using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Providers;
 using Moq;
 using Xunit;
 
@@ -75,6 +76,27 @@ public sealed class AutoFilmRemoteProviderTargetResolverTests
             libraryManager.Object);
 
         Assert.Same(series, result);
+    }
+
+    [Fact]
+    public void QueueMetadataRefreshes_ProviderIdsPresent_UsesFullRefresh()
+    {
+        var target = new Folder { Id = Guid.NewGuid() };
+        var providerManager = new Mock<IProviderManager>();
+
+        AutoFilmRemoteProviderTargetResolver.QueueMetadataRefreshes(
+            providerManager.Object,
+            target,
+            Array.Empty<Video>(),
+            new AutoFilmDirectorySnapshot(),
+            true);
+
+        providerManager.Verify(instance => instance.QueueRefresh(
+            target.Id,
+            It.Is<MetadataRefreshOptions>(options =>
+                options.MetadataRefreshMode == MetadataRefreshMode.FullRefresh
+                && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh),
+            RefreshPriority.High));
     }
 
     [Fact]

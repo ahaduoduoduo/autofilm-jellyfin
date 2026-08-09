@@ -28,6 +28,12 @@ passed through Jellyfin's standard episode-path parser. The resulting
 seasons and assign each Episode to the correct season even when physical
 directories contain an additional release-name layer.
 
+Requests that include provider identifiers use a full provider refresh. The
+Series is queued at high priority; existing Seasons and discovered Episodes
+are queued at normal priority so previously empty metadata is fetched after
+the Series identity has been persisted. Requests without provider identifiers
+keep Jellyfin's default refresh mode.
+
 When upgrading an item created by the previous implementation, matching
 provider identifiers are removed from the incorrectly targeted physical
 Season after they are saved on the Series. Episode paths and IDs are reused;

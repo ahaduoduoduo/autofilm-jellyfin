@@ -255,12 +255,12 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     cancellationToken).ConfigureAwait(false);
         }
 
-        QueueMetadataRefresh(providerTarget, snapshot);
-        foreach (var video in videos
-                     .Where(video => !video.Id.Equals(providerTarget.Id)))
-        {
-            QueueMetadataRefresh(video, snapshot);
-        }
+        AutoFilmRemoteProviderTargetResolver.QueueMetadataRefreshes(
+            _providerManager,
+            providerTarget,
+            videos,
+            snapshot,
+            request.ProviderIds is { Count: > 0 });
 
         foreach (var importedVideo in importResult.CreatedItems
                      .OfType<Video>()
@@ -584,23 +584,6 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             throw new InvalidOperationException(
                 $"Remote refresh exceeded the object limit of {_options.RemoteRefreshMaxObjects}.");
         }
-    }
-
-    private void QueueMetadataRefresh(
-        BaseItem item,
-        AutoFilmDirectorySnapshot snapshot)
-    {
-        _providerManager.QueueRefresh(
-            item.Id,
-            new MetadataRefreshOptions(snapshot)
-            {
-                MetadataRefreshMode = MetadataRefreshMode.Default,
-                ImageRefreshMode = MetadataRefreshMode.Default,
-                ReplaceAllMetadata = false,
-                ReplaceAllImages = false,
-                EnableRemoteContentProbe = false
-            },
-            RefreshPriority.High);
     }
 
     private void QueueProbe(BaseItem item, bool force)

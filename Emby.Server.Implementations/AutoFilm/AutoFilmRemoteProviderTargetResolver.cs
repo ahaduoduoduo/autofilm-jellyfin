@@ -178,6 +178,65 @@ internal static class AutoFilmRemoteProviderTargetResolver
     }
 
     /// <summary>
+    /// Returns physical seasons already present below the logical metadata target.
+    /// </summary>
+    /// <param name="providerTarget">Logical provider target.</param>
+    /// <returns>Existing physical seasons.</returns>
+    internal static IReadOnlyList<Season> GetExistingSeasons(
+        BaseItem providerTarget)
+    {
+        return providerTarget is Series series
+            ? series.GetRecursiveChildren(false).OfType<Season>().ToArray()
+            : Array.Empty<Season>();
+    }
+
+    /// <summary>
+    /// Queues provider metadata after the Series identity and episode numbers are saved.
+    /// </summary>
+    /// <param name="providerManager">Jellyfin provider manager.</param>
+    /// <param name="providerTarget">Logical metadata target.</param>
+    /// <param name="videos">Videos discovered by the remote import.</param>
+    /// <param name="snapshot">Bounded OpenList snapshot.</param>
+    /// <param name="forceProviderRefresh">Whether provider metadata must be fetched again.</param>
+    internal static void QueueMetadataRefreshes(
+        IProviderManager providerManager,
+        BaseItem providerTarget,
+        IReadOnlyList<Video> videos,
+        AutoFilmDirectorySnapshot snapshot,
+        bool forceProviderRefresh)
+    {
+        var refreshMode = forceProviderRefresh
+            ? MetadataRefreshMode.FullRefresh
+            : MetadataRefreshMode.Default;
+        QueueMetadataRefresh(
+            providerManager,
+            providerTarget,
+            snapshot,
+            refreshMode,
+            RefreshPriority.High);
+        foreach (var season in GetExistingSeasons(providerTarget))
+        {
+            QueueMetadataRefresh(
+                providerManager,
+                season,
+                snapshot,
+                refreshMode,
+                RefreshPriority.Normal);
+        }
+
+        foreach (var video in videos
+                     .Where(video => !video.Id.Equals(providerTarget.Id)))
+        {
+            QueueMetadataRefresh(
+                providerManager,
+                video,
+                snapshot,
+                refreshMode,
+                RefreshPriority.Normal);
+        }
+    }
+
+    /// <summary>
     /// Finds the nearest series without relying on the physical directory depth.
     /// </summary>
     /// <param name="item">Resolved refresh target.</param>
@@ -214,5 +273,25 @@ internal static class AutoFilmRemoteProviderTargetResolver
         }
 
         return null;
+    }
+
+    private static void QueueMetadataRefresh(
+        IProviderManager providerManager,
+        BaseItem item,
+        AutoFilmDirectorySnapshot snapshot,
+        MetadataRefreshMode refreshMode,
+        RefreshPriority priority)
+    {
+        providerManager.QueueRefresh(
+            item.Id,
+            new MetadataRefreshOptions(snapshot)
+            {
+                MetadataRefreshMode = refreshMode,
+                ImageRefreshMode = refreshMode,
+                ReplaceAllMetadata = false,
+                ReplaceAllImages = false,
+                EnableRemoteContentProbe = false
+            },
+            priority);
     }
 }
