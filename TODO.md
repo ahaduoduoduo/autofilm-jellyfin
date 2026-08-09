@@ -97,6 +97,8 @@ Updated: 2026-08-10
   persist parsed episode season numbers before the Series metadata refresh.
 - [x] 2026-08-10: Force provider-backed remote refreshes to revisit existing
   Season and Episode metadata after the Series identity is saved.
+- [x] 2026-08-10: Replace scanner-derived Episode filenames with provider
+  titles after exact remote television imports.
 
 ## Planned
 

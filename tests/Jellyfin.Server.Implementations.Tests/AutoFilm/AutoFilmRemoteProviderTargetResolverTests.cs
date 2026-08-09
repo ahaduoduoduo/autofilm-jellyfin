@@ -82,12 +82,13 @@ public sealed class AutoFilmRemoteProviderTargetResolverTests
     public void QueueMetadataRefreshes_ProviderIdsPresent_UsesFullRefresh()
     {
         var target = new Folder { Id = Guid.NewGuid() };
+        var episode = new Episode { Id = Guid.NewGuid() };
         var providerManager = new Mock<IProviderManager>();
 
         AutoFilmRemoteProviderTargetResolver.QueueMetadataRefreshes(
             providerManager.Object,
             target,
-            Array.Empty<Video>(),
+            new Video[] { episode },
             new AutoFilmDirectorySnapshot(),
             true);
 
@@ -95,8 +96,16 @@ public sealed class AutoFilmRemoteProviderTargetResolverTests
             target.Id,
             It.Is<MetadataRefreshOptions>(options =>
                 options.MetadataRefreshMode == MetadataRefreshMode.FullRefresh
-                && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh),
+                && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh
+                && !options.ReplaceAllMetadata),
             RefreshPriority.High));
+        providerManager.Verify(instance => instance.QueueRefresh(
+            episode.Id,
+            It.Is<MetadataRefreshOptions>(options =>
+                options.MetadataRefreshMode == MetadataRefreshMode.FullRefresh
+                && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh
+                && options.ReplaceAllMetadata),
+            RefreshPriority.Normal));
     }
 
     [Fact]

@@ -213,7 +213,8 @@ internal static class AutoFilmRemoteProviderTargetResolver
             providerTarget,
             snapshot,
             refreshMode,
-            RefreshPriority.High);
+            RefreshPriority.High,
+            false);
         foreach (var season in GetExistingSeasons(providerTarget))
         {
             QueueMetadataRefresh(
@@ -221,7 +222,8 @@ internal static class AutoFilmRemoteProviderTargetResolver
                 season,
                 snapshot,
                 refreshMode,
-                RefreshPriority.Normal);
+                RefreshPriority.Normal,
+                false);
         }
 
         foreach (var video in videos
@@ -232,7 +234,8 @@ internal static class AutoFilmRemoteProviderTargetResolver
                 video,
                 snapshot,
                 refreshMode,
-                RefreshPriority.Normal);
+                RefreshPriority.Normal,
+                forceProviderRefresh);
         }
     }
 
@@ -280,7 +283,8 @@ internal static class AutoFilmRemoteProviderTargetResolver
         BaseItem item,
         AutoFilmDirectorySnapshot snapshot,
         MetadataRefreshMode refreshMode,
-        RefreshPriority priority)
+        RefreshPriority priority,
+        bool replaceAllMetadata)
     {
         providerManager.QueueRefresh(
             item.Id,
@@ -288,7 +292,7 @@ internal static class AutoFilmRemoteProviderTargetResolver
             {
                 MetadataRefreshMode = refreshMode,
                 ImageRefreshMode = refreshMode,
-                ReplaceAllMetadata = false,
+                ReplaceAllMetadata = replaceAllMetadata,
                 ReplaceAllImages = false,
                 EnableRemoteContentProbe = false
             },

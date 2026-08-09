@@ -34,6 +34,10 @@ are queued at normal priority so previously empty metadata is fetched after
 the Series identity has been persisted. Requests without provider identifiers
 keep Jellyfin's default refresh mode.
 
+For discovered videos, an exact provider-backed refresh replaces the
+scanner-derived display title with provider metadata. It does not force image
+replacement or overwrite Series-level manual metadata.
+
 When upgrading an item created by the previous implementation, matching
 provider identifiers are removed from the incorrectly targeted physical
 Season after they are saved on the Series. Episode paths and IDs are reused;
