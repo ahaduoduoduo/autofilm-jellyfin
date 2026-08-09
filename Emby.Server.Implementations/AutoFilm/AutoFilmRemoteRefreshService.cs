@@ -224,20 +224,39 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 request.Recursive,
                 cancellationToken)
             : DescendantImportResult.Empty;
-        var providerTarget = ResolveProviderTarget(
+        var providerTarget = AutoFilmRemoteProviderTargetResolver.Resolve(
             resolvedItem,
             request,
-            snapshot);
-        ApplyProviderIds(providerTarget, request.ProviderIds);
+            snapshot,
+            _libraryManager);
+        var videos = importResult.Videos
+            .Concat(resolvedItem is Video resolvedVideo
+                ? new[] { resolvedVideo }
+                : Array.Empty<Video>())
+            .DistinctBy(video => video.Id)
+            .ToArray();
+        await AutoFilmRemoteProviderTargetResolver.PrepareEpisodesAsync(
+            videos,
+            _libraryManager,
+            cancellationToken).ConfigureAwait(false);
+        AutoFilmRemoteProviderTargetResolver.ApplyProviderIds(
+            providerTarget,
+            request.ProviderIds);
         if (request.ProviderIds is { Count: > 0 })
         {
             await providerTarget.UpdateToRepositoryAsync(
                 ItemUpdateType.MetadataEdit,
                 cancellationToken).ConfigureAwait(false);
+            await AutoFilmRemoteProviderTargetResolver
+                .RemoveMisplacedSeriesProviderIdsAsync(
+                    resolvedItem,
+                    providerTarget,
+                    request.ProviderIds,
+                    cancellationToken).ConfigureAwait(false);
         }
 
         QueueMetadataRefresh(providerTarget, snapshot);
-        foreach (var video in importResult.Videos
+        foreach (var video in videos
                      .Where(video => !video.Id.Equals(providerTarget.Id)))
         {
             QueueMetadataRefresh(video, snapshot);
@@ -250,7 +269,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             QueueProbe(importedVideo, false);
         }
 
-        QueueProbe(providerTarget, request.ForceProbe);
+        QueueProbe(resolvedItem, request.ForceProbe);
         return providerTarget;
     }
 
@@ -584,76 +603,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             RefreshPriority.High);
     }
 
-    private BaseItem ResolveProviderTarget(
-        BaseItem resolvedItem,
-        AutoFilmRemoteRefreshRequest request,
-        AutoFilmDirectorySnapshot snapshot)
-    {
-        if (!string.Equals(
-                request.ProviderTarget,
-                "movie",
-                StringComparison.OrdinalIgnoreCase)
-            || resolvedItem is not Folder folder)
-        {
-            return resolvedItem;
-        }
-
-        var candidates = snapshot
-            .GetFileSystemEntries(folder.Path)
-            .Where(entry => !entry.IsDirectory)
-            .Select(entry =>
-            {
-                var existing = _libraryManager.FindByPath(
-                    entry.FullName,
-                    false);
-                return (
-                    Item: existing ?? _libraryManager.ResolvePath(
-                        entry,
-                        folder,
-                        snapshot,
-                        _libraryManager.GetContentType(folder)),
-                    Exists: existing is not null);
-            })
-            .Where(candidate => candidate.Item is Video)
-            .ToArray();
-        if (candidates.Length != 1)
-        {
-            return resolvedItem;
-        }
-
-        var candidate = candidates[0];
-        if (!candidate.Exists)
-        {
-            _libraryManager.CreateItem(candidate.Item!, folder);
-        }
-
-        return candidate.Item!;
-    }
-
     private void QueueProbe(BaseItem item, bool force)
     {
         if (item is Video)
         {
             _probeQueue.Enqueue(item.Id, force);
-        }
-    }
-
-    private static void ApplyProviderIds(
-        BaseItem item,
-        IReadOnlyDictionary<string, string>? providerIds)
-    {
-        if (providerIds is null)
-        {
-            return;
-        }
-
-        foreach (var pair in providerIds)
-        {
-            if (!string.IsNullOrWhiteSpace(pair.Key)
-                && !string.IsNullOrWhiteSpace(pair.Value))
-            {
-                item.SetProviderId(pair.Key, pair.Value);
-            }
         }
     }
 

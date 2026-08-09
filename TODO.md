@@ -1,6 +1,6 @@
 # AutoFilm development status
 
-Updated: 2026-08-06
+Updated: 2026-08-10
 
 ## Completed
 
@@ -92,6 +92,9 @@ Updated: 2026-08-06
   collision behavior as Jellyfin local subtitle uploads.
 - [x] 2026-07-30: Add a focused remote subtitle upload test covering numbered
   names and immediate media-stream insertion.
+- [x] 2026-08-10: Resolve nested OpenList television refreshes to their owning
+  Series, move previously misplaced matching provider IDs off a Season, and
+  persist parsed episode season numbers before the Series metadata refresh.
 
 ## Planned
 

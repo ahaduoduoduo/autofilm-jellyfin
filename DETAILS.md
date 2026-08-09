@@ -113,6 +113,16 @@ responsibility:
 - `Emby.Server.Implementations/Library/LibraryManager.cs`
   - Accepts `Local` and `OpenList` media sources and persists OpenList roots as
     normal library locations.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`
+  - Loads a bounded OpenList snapshot, imports missing remote items, prepares
+    episode numbers, and sends metadata/probe work to Jellyfin.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProviderTargetResolver.cs`
+  - Finds the Series that owns a nested release, prepares episode numbering,
+    and prevents series provider identifiers from remaining on an intermediate
+    Season.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
+  - Removes stale database-only remote items and replaces incorrectly typed
+    items during an explicit full scan without deleting OpenList files.
 - `Emby.Server.Implementations/IO/ManagedFileSystem.cs`
   - Provides synthetic directory metadata for configured OpenList roots.
 - `Emby.Server.Implementations/IO/LibraryMonitor.cs`
@@ -125,4 +135,5 @@ Installation-specific database migration and legacy subtitle reverse lookup are
 absent from the maintained public branch and its module surface.
 
 Detailed configuration and behavior are in
-`docs/autofilm-remote-media.md`.
+`docs/autofilm-remote-media.md`. Nested multi-season package behavior is in
+`docs/autofilm-remote-series.md`.

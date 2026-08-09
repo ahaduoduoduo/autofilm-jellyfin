@@ -87,8 +87,12 @@ Explicit `RemoteRefresh` requests discover remote objects. Its default
 `scan_mode: new` behavior is additive. Administrator-requested
 `scan_mode: full` uses a fresh bounded snapshot to remove stale database-only
 descendants and correct previously misclassified remote items without deleting
-OpenList files. OpenList file mutations do not alter the Jellyfin library
-automatically. External `.sup` streams are reported directly as
+OpenList files. Remote television refreshes resolve the owning Series before
+applying provider identifiers, even when a multi-season release adds an extra
+directory between the Series and its `S01`-style folders. Jellyfin then uses
+the parsed episode season numbers to create and populate the logical seasons.
+OpenList file mutations do not alter the Jellyfin library automatically.
+External `.sup` streams are reported directly as
 externally deliverable `Codec=sup`. OpenList subtitles return 302 responses,
 while local external SUP files are returned unchanged with HTTP range support.
 Playback and subtitle URL rewriting no longer requires an Nginx compatibility
@@ -115,8 +119,10 @@ client lets administrators select Local or OpenList for each new library path
 and browse OpenList directories through Jellyfin's authenticated API.
 
 See [docs/autofilm-remote-media.md](docs/autofilm-remote-media.md) for
-configuration and safety rules, [DETAILS.md](DETAILS.md) for the module map, and
-[TODO.md](TODO.md) for current implementation status.
+configuration and safety rules,
+[docs/autofilm-remote-series.md](docs/autofilm-remote-series.md) for nested TV
+release handling, [DETAILS.md](DETAILS.md) for the module map, and [TODO.md](TODO.md)
+for current implementation status.
 
 ## Jellyfin Server
 
