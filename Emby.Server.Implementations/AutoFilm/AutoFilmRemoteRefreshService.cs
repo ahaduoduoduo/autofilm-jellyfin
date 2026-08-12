@@ -202,6 +202,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                         resolvedItem.IsFolder);
                 if (persisted is null)
                 {
+                    resolvedItem.SetParent(currentParent);
                     _libraryManager.CreateItem(resolvedItem, currentParent);
                 }
                 else
@@ -392,6 +393,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                             item.IsFolder);
                     if (persisted is null)
                     {
+                        item.SetParent(currentParent);
                         _libraryManager.CreateItem(item, currentParent);
                         created.Add(item);
                     }
