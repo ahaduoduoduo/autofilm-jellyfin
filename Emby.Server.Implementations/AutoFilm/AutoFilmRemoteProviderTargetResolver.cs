@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
@@ -214,7 +215,7 @@ internal static class AutoFilmRemoteProviderTargetResolver
             snapshot,
             refreshMode,
             RefreshPriority.High,
-            false);
+            forceProviderRefresh && providerTarget is Movie);
         foreach (var season in GetExistingSeasons(providerTarget))
         {
             QueueMetadataRefresh(

@@ -2,6 +2,7 @@ using System;
 using Emby.Server.Implementations.AutoFilm;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
@@ -106,6 +107,29 @@ public sealed class AutoFilmRemoteProviderTargetResolverTests
                 && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh
                 && options.ReplaceAllMetadata),
             RefreshPriority.Normal));
+    }
+
+    [Fact]
+    public void QueueMetadataRefreshes_MovieProviderIdsPresent_ReplacesScannerMetadata()
+    {
+        var target = new Movie { Id = Guid.NewGuid() };
+        var providerManager = new Mock<IProviderManager>();
+
+        AutoFilmRemoteProviderTargetResolver.QueueMetadataRefreshes(
+            providerManager.Object,
+            target,
+            new Video[] { target },
+            new AutoFilmDirectorySnapshot(),
+            true);
+
+        providerManager.Verify(instance => instance.QueueRefresh(
+            target.Id,
+            It.Is<MetadataRefreshOptions>(options =>
+                options.MetadataRefreshMode == MetadataRefreshMode.FullRefresh
+                && options.ImageRefreshMode == MetadataRefreshMode.FullRefresh
+                && options.ReplaceAllMetadata
+                && !options.ReplaceAllImages),
+            RefreshPriority.High));
     }
 
     [Fact]
