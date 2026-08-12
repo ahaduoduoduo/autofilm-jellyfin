@@ -47,6 +47,8 @@ responsibility:
     release directory without changing Jellyfin's normal local resolver.
   - Accepts a single direct video despite a `Sample` subdirectory, and uses a
     unique release-name match when promotional videos are present.
+  - Reads the media type from Jellyfin's virtual-folder configuration when a
+    persisted OpenList directory does not inherit a collection type.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
   - Runs only for an explicit full rescan after a fresh bounded snapshot was
     loaded successfully.
@@ -57,6 +59,8 @@ responsibility:
     reattaches user data after an item type change.
   - Uses the remote movie resolver during full scans so a previous
     `Folder + Video` result can become a Movie without changing OpenList files.
+  - Reparents replacements to the persisted containing folder before insertion
+    so a removed wrapper cannot remain as a database foreign-key target.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
 - `Jellyfin.Api/Controllers/ItemRefreshController.cs`

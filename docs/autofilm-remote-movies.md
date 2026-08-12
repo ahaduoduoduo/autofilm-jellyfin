@@ -13,6 +13,10 @@ The AutoFilm resolver is limited to explicit OpenList scans inside a Jellyfin
 movie library. Local libraries, scheduled library scans, television libraries,
 and other Jellyfin resolver calls retain upstream behavior.
 
+The library type comes from Jellyfin's virtual-folder configuration. This is
+also used when the persisted OpenList root and its descendants are ordinary
+`Folder` rows and therefore do not carry an inherited content type themselves.
+
 For one release directory, primary-video selection follows these rules:
 
 1. If exactly one direct child resolves as a Movie, use it even when other
@@ -25,10 +29,16 @@ For one release directory, primary-video selection follows these rules:
    editions.
 
 Provider identifiers from the refresh request are applied to the selected
-Movie. A full remote rescan uses the same resolver to replace a previous
+Movie. Provider-backed imports replace the scanner-derived release name with
+provider metadata while retaining existing images. A full remote rescan uses
+the same resolver to replace a previous
 `Folder + Video` representation while retaining provider identifiers, core
 metadata, linked collection references, and user data. The replacement never
 renames, moves, or deletes an OpenList object.
+
+A Movie selected from inside a wrapper directory is persisted directly below
+the wrapper's stored parent. The temporary wrapper resolver object is never
+used as a database parent, including both new imports and type replacements.
 
 Full rescans also remove database-only descendants after a fresh non-empty
 OpenList snapshot succeeds. Additive scans continue to preserve missing

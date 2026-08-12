@@ -108,6 +108,9 @@ Updated: 2026-08-10
   Movie, and reuse the same rule for full-scan type correction.
 - [x] 2026-08-12: Let an exact full scan remove a missing OpenList database
   item only after its refreshed parent returns a non-empty listing.
+- [x] 2026-08-12: Read remote movie-library identity from Jellyfin virtual
+  folders, persist wrapper-selected movies under their stored parent, and
+  replace scanner release names during provider-backed movie imports.
 
 ## Planned
 
