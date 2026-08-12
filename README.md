@@ -87,7 +87,10 @@ Explicit `RemoteRefresh` requests discover remote objects. Its default
 `scan_mode: new` behavior is additive. Administrator-requested
 `scan_mode: full` uses a fresh bounded snapshot to remove stale database-only
 descendants and correct previously misclassified remote items without deleting
-OpenList files. Remote television refreshes resolve the owning Series before
+OpenList files. Explicit movie scans can select one unambiguous primary video
+from a release directory containing a `Sample` folder or promotional videos;
+ambiguous multi-video directories retain Jellyfin's original representation.
+Remote television refreshes resolve the owning Series before
 applying provider identifiers, even when a multi-season release adds an extra
 directory between the Series and its `S01`-style folders. Jellyfin then uses
 the parsed episode season numbers to create and populate the logical seasons.
@@ -120,6 +123,8 @@ and browse OpenList directories through Jellyfin's authenticated API.
 
 See [docs/autofilm-remote-media.md](docs/autofilm-remote-media.md) for
 configuration and safety rules,
+[docs/autofilm-remote-movies.md](docs/autofilm-remote-movies.md) for movie
+release-directory selection,
 [docs/autofilm-remote-series.md](docs/autofilm-remote-series.md) for nested TV
 release handling, [DETAILS.md](DETAILS.md) for the module map, and [TODO.md](TODO.md)
 for current implementation status.

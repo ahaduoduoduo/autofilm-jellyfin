@@ -153,11 +153,11 @@ public sealed class AutoFilmRemoteReconciler
         Folder parent,
         AutoFilmDirectorySnapshot snapshot)
     {
-        return _libraryManager.ResolvePath(
+        return AutoFilmRemoteMovieResolver.ResolveEntry(
             entry,
             parent,
             snapshot,
-            _libraryManager.GetContentType(parent));
+            _libraryManager);
     }
 
     private async Task<BaseItem> ReplaceAsync(
@@ -176,6 +176,11 @@ public sealed class AutoFilmRemoteReconciler
                 ?? current
             : current;
         CopyMetadata(metadataSource, replacement);
+        if (!ReferenceEquals(metadataSource, current))
+        {
+            CopyMissingProviderIds(current, replacement);
+        }
+
         var oldIds = new[] { current.Id, metadataSource.Id }
             .Where(id => !id.Equals(replacement.Id))
             .Distinct()
@@ -283,5 +288,15 @@ public sealed class AutoFilmRemoteReconciler
         destination.Genres = source.Genres?.ToArray() ?? Array.Empty<string>();
         destination.Studios = source.Studios?.ToArray() ?? Array.Empty<string>();
         destination.Tags = source.Tags?.ToArray() ?? Array.Empty<string>();
+    }
+
+    private static void CopyMissingProviderIds(
+        BaseItem source,
+        BaseItem destination)
+    {
+        foreach (var providerId in source.ProviderIds)
+        {
+            destination.ProviderIds.TryAdd(providerId.Key, providerId.Value);
+        }
     }
 }

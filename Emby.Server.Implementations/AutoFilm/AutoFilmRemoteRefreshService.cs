@@ -157,11 +157,21 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             }
             else
             {
-                resolvedItem = _libraryManager.ResolvePath(
-                    fileInfo,
-                    currentParent,
-                    load.Snapshot,
-                    _libraryManager.GetContentType(currentParent));
+                resolvedItem = string.Equals(
+                    path,
+                    openListPath,
+                    StringComparison.Ordinal)
+                    ? AutoFilmRemoteMovieResolver.ResolveEntry(
+                        fileInfo,
+                        currentParent,
+                        load.Snapshot,
+                        _libraryManager)
+                    : _libraryManager.ResolvePath(
+                        fileInfo,
+                        currentParent,
+                        load.Snapshot,
+                        _libraryManager.GetContentType(currentParent));
+
                 if (resolvedItem is null)
                 {
                     throw new InvalidOperationException(
@@ -348,18 +358,29 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                     entry.IsDirectory);
                 if (item is null)
                 {
-                    item = _libraryManager.ResolvePath(
+                    item = AutoFilmRemoteMovieResolver.ResolveEntry(
                         entry,
                         currentParent,
                         snapshot,
-                        _libraryManager.GetContentType(currentParent));
+                        _libraryManager);
                     if (item is null)
                     {
                         continue;
                     }
 
-                    _libraryManager.CreateItem(item, currentParent);
-                    created.Add(item);
+                    var persisted = _libraryManager.GetItemById(item.Id)
+                        ?? _libraryManager.FindByPath(
+                            item.Path,
+                            item.IsFolder);
+                    if (persisted is null)
+                    {
+                        _libraryManager.CreateItem(item, currentParent);
+                        created.Add(item);
+                    }
+                    else
+                    {
+                        item = persisted;
+                    }
                 }
 
                 if (item is Folder childFolder)

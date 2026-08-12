@@ -40,8 +40,11 @@ responsibility:
     without treating a partial or unavailable remote snapshot as deletion.
   - Refreshes metadata for every discovered video and probes newly created
     videos through the serialized remote probe queue.
-  - When `provider_target` is `movie`, applies provider IDs to the only direct
-    video in a result directory; series refreshes retain folder-level behavior.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMovieResolver.cs`
+  - Selects one unambiguous primary Movie from an explicitly scanned OpenList
+    release directory without changing Jellyfin's normal local resolver.
+  - Accepts a single direct video despite a `Sample` subdirectory, and uses a
+    unique release-name match when promotional videos are present.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
   - Runs only for an explicit full rescan after a fresh bounded snapshot was
     loaded successfully.
@@ -50,6 +53,8 @@ responsibility:
     resolvers.
   - Reuses provider IDs and core metadata, reroutes collection references, and
     reattaches user data after an item type change.
+  - Uses the remote movie resolver during full scans so a previous
+    `Folder + Video` result can become a Movie without changing OpenList files.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos.
 - `Jellyfin.Api/Controllers/ItemRefreshController.cs`
@@ -120,6 +125,9 @@ responsibility:
   - Finds the Series that owns a nested release, prepares episode numbering,
     and prevents series provider identifiers from remaining on an intermediate
     Season.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMovieResolver.cs`
+  - Resolves an unambiguous primary Movie only during bounded OpenList scans;
+    normal Jellyfin local and scheduled scanning remain unchanged.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
   - Removes stale database-only remote items and replaces incorrectly typed
     items during an explicit full scan without deleting OpenList files.

@@ -103,6 +103,9 @@ Updated: 2026-08-10
   multi-season wrapper directory was initially classified as Season 1.
 - [x] 2026-08-10: Count Season children and playback state by logical
   `SeasonId` instead of a multi-season wrapper's physical descendants.
+- [x] 2026-08-12: Resolve explicit OpenList movie release directories with a
+  `Sample` subdirectory or uniquely identifiable promotional videos as one
+  Movie, and reuse the same rule for full-scan type correction.
 
 ## Planned
 
