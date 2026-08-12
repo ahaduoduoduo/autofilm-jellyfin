@@ -195,6 +195,7 @@ public sealed class AutoFilmRemoteReconciler
             current,
             new DeleteOptions { DeleteFileLocation = false },
             false);
+        replacement.SetParent(parent);
         var persisted = _libraryManager.GetItemById(replacement.Id)
             ?? _libraryManager.FindByPath(replacement.Path, replacement.IsFolder);
         if (persisted is null)
