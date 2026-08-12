@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Jellyfin.Data.Enums;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 
 namespace Emby.Server.Implementations.AutoFilm;
