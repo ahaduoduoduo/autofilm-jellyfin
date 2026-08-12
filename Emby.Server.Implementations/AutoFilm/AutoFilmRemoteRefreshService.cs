@@ -79,6 +79,23 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 nameof(request));
         }
 
+        AutoFilmOpenListObject? refreshedTarget = null;
+        if (fullScan && existing is not null)
+        {
+            refreshedTarget = await _openListClient.GetObjectAsync(
+                openListPath,
+                true,
+                cancellationToken).ConfigureAwait(false);
+            if (refreshedTarget is null)
+            {
+                return await RemoveMissingTargetAsync(
+                    existing,
+                    scanMode,
+                    openListPath,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         var firstPath = existing is null
             ? GetOpenListPath(parent!.Path)
             : string.Equals(
@@ -94,6 +111,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             openListPath,
             request.Refresh || fullScan,
             request.Recursive || fullScan,
+            refreshedTarget,
             cancellationToken).ConfigureAwait(false);
 
         if (existing is not null)
@@ -402,6 +420,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         string targetPath,
         bool refresh,
         bool recursive,
+        AutoFilmOpenListObject? refreshedTarget,
         CancellationToken cancellationToken)
     {
         var snapshot = new AutoFilmDirectorySnapshot();
@@ -415,10 +434,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         if (descendantPaths.Length == 0)
         {
-            var targetObject = await _openListClient.GetObjectAsync(
-                targetPath,
-                refresh,
-                cancellationToken).ConfigureAwait(false)
+            var targetObject = refreshedTarget
+                ?? await _openListClient.GetObjectAsync(
+                    targetPath,
+                    refresh,
+                    cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException(
                     $"OpenList path '{targetPath}' does not exist.");
             snapshot.Add(targetObject);
@@ -440,13 +460,16 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         foreach (var path in descendantPaths)
         {
-            var obj = await _openListClient.GetObjectAsync(
+            var isTarget = string.Equals(
                 path,
-                refresh && string.Equals(
+                targetPath,
+                StringComparison.Ordinal);
+            var obj = isTarget && refreshedTarget is not null
+                ? refreshedTarget
+                : await _openListClient.GetObjectAsync(
                     path,
-                    targetPath,
-                    StringComparison.Ordinal),
-                cancellationToken).ConfigureAwait(false)
+                    refresh && isTarget,
+                    cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException(
                     $"OpenList path '{path}' does not exist.");
             snapshot.Add(obj);
@@ -510,6 +533,81 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             snapshot,
             directoriesRead,
             objectsRead);
+    }
+
+    private async Task<AutoFilmRemoteRefreshResult> RemoveMissingTargetAsync(
+        BaseItem existing,
+        string scanMode,
+        string openListPath,
+        CancellationToken cancellationToken)
+    {
+        var libraryRoot = _remoteLibraryRoots.FindRoot(openListPath)
+            ?? throw new InvalidOperationException(
+                "The missing path is outside the configured OpenList library roots.");
+        var removalTarget = existing;
+        var removalPath = openListPath;
+        var databaseParent = existing.ParentId.Equals(Guid.Empty)
+            ? null
+            : _libraryManager.GetItemById(existing.ParentId);
+        while (databaseParent is not null
+               && AutoFilmRemotePath.TryGetOpenListPath(
+                   databaseParent.Path,
+                   out var databaseParentPath)
+               && !string.Equals(
+                   databaseParentPath,
+                   libraryRoot,
+                   StringComparison.Ordinal))
+        {
+            var remoteParent = await _openListClient.GetObjectAsync(
+                databaseParentPath,
+                true,
+                cancellationToken).ConfigureAwait(false);
+            if (remoteParent is not null)
+            {
+                break;
+            }
+
+            removalTarget = databaseParent;
+            removalPath = databaseParentPath;
+            databaseParent = databaseParent.ParentId.Equals(Guid.Empty)
+                ? null
+                : _libraryManager.GetItemById(databaseParent.ParentId);
+        }
+
+        var parentPath = GetParentPath(removalPath);
+        var siblings = await _openListClient.ListObjectsAsync(
+            parentPath,
+            false,
+            cancellationToken).ConfigureAwait(false);
+        if (siblings.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "OpenList returned an empty parent directory while Jellyfin still has "
+                + "the requested item; full rescan was refused.");
+        }
+
+        var itemId = removalTarget.Id;
+        var itemName = removalTarget.Name;
+        var itemType = removalTarget.GetType().Name;
+        var removedItems = 1 + (removalTarget is Folder folder
+            ? folder.GetRecursiveChildren(false)
+                .Count(item => AutoFilmRemotePath.IsRemote(item.Path))
+            : 0);
+        _libraryManager.DeleteItem(
+            removalTarget,
+            new DeleteOptions { DeleteFileLocation = false },
+            false);
+        return new AutoFilmRemoteRefreshResult(
+            "removed",
+            scanMode,
+            itemId,
+            itemName,
+            itemType,
+            openListPath,
+            1,
+            siblings.Count,
+            removedItems,
+            0);
     }
 
     private async Task<int> LoadDirectoryAsync(

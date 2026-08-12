@@ -106,6 +106,8 @@ Updated: 2026-08-10
 - [x] 2026-08-12: Resolve explicit OpenList movie release directories with a
   `Sample` subdirectory or uniquely identifiable promotional videos as one
   Movie, and reuse the same rule for full-scan type correction.
+- [x] 2026-08-12: Let an exact full scan remove a missing OpenList database
+  item only after its refreshed parent returns a non-empty listing.
 
 ## Planned
 

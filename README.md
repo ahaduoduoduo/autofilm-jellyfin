@@ -87,7 +87,9 @@ Explicit `RemoteRefresh` requests discover remote objects. Its default
 `scan_mode: new` behavior is additive. Administrator-requested
 `scan_mode: full` uses a fresh bounded snapshot to remove stale database-only
 descendants and correct previously misclassified remote items without deleting
-OpenList files. Explicit movie scans can select one unambiguous primary video
+OpenList files. A missing selected item is removed only after its refreshed
+parent returns a non-empty listing. Explicit movie scans can select one
+unambiguous primary video
 from a release directory containing a `Sample` folder or promotional videos;
 ambiguous multi-video directories retain Jellyfin's original representation.
 Remote television refreshes resolve the owning Series before

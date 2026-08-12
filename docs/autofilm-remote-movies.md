@@ -33,3 +33,8 @@ renames, moves, or deletes an OpenList object.
 Full rescans also remove database-only descendants after a fresh non-empty
 OpenList snapshot succeeds. Additive scans continue to preserve missing
 records so a temporary remote outage cannot erase the library.
+
+When the selected item itself no longer exists, a full scan refreshes its
+parent first. Jellyfin removes the stale database item only when that parent
+still returns other objects and the target remains absent. An empty parent is
+treated as an unavailable or ambiguous remote result and removal is refused.

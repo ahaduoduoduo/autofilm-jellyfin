@@ -38,6 +38,8 @@ responsibility:
   - Uses the same additive descendant importer for new and existing Jellyfin
     folders, including episode, season, and multi-season result directories,
     without treating a partial or unavailable remote snapshot as deletion.
+  - Removes an exact missing target during a full scan only after its refreshed
+    OpenList parent returns a non-empty result.
   - Refreshes metadata for every discovered video and probes newly created
     videos through the serialized remote probe queue.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMovieResolver.cs`
