@@ -79,8 +79,23 @@ internal static class AutoFilmRemoteMovieResolver
         var hasMovieOptions = collectionType is null
             && libraryManager.GetLibraryOptions(libraryParent)
                 .GetTypeOptions(nameof(Movie)) is not null;
+        var belongsToVirtualMovieLibrary = collectionType is null
+            && libraryManager.GetVirtualFolders()?.Any(folder =>
+                folder.CollectionType == CollectionTypeOptions.movies
+                && folder.Locations.Any(location =>
+                    AutoFilmRemotePath.TryGetOpenListPath(
+                        location,
+                        out var rootPath)
+                    && AutoFilmRemotePath.TryGetOpenListPath(
+                        libraryParent.Path,
+                        out var parentPath)
+                    && AutoFilmRemotePath.IsWithinOpenListRoot(
+                        parentPath,
+                        rootPath))) == true;
         if (!directoryEntry.IsDirectory
-            || (collectionType != CollectionType.movies && !hasMovieOptions))
+            || (collectionType != CollectionType.movies
+                && !hasMovieOptions
+                && !belongsToVirtualMovieLibrary))
         {
             return null;
         }
