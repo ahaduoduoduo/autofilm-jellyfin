@@ -6,6 +6,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.IO;
 using Moq;
 using Xunit;
@@ -112,7 +113,13 @@ public sealed class AutoFilmRemoteMovieResolverTests
         var library = new Mock<ILibraryManager>();
         library
             .Setup(instance => instance.GetContentType(parent))
-            .Returns(CollectionType.movies);
+            .Returns((CollectionType?)null);
+        library
+            .Setup(instance => instance.GetLibraryOptions(parent))
+            .Returns(new LibraryOptions
+            {
+                TypeOptions = [new TypeOptions { Type = nameof(Movie) }]
+            });
         library
             .Setup(instance => instance.ResolvePath(
                 It.Is<FileSystemMetadata>(entry => entry.Name.EndsWith(".mkv", StringComparison.Ordinal)),

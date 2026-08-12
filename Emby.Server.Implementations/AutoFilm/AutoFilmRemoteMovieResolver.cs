@@ -75,8 +75,12 @@ internal static class AutoFilmRemoteMovieResolver
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(libraryManager);
 
+        var collectionType = libraryManager.GetContentType(libraryParent);
+        var hasMovieOptions = collectionType is null
+            && libraryManager.GetLibraryOptions(libraryParent)
+                .GetTypeOptions(nameof(Movie)) is not null;
         if (!directoryEntry.IsDirectory
-            || libraryManager.GetContentType(libraryParent) != CollectionType.movies)
+            || (collectionType != CollectionType.movies && !hasMovieOptions))
         {
             return null;
         }
