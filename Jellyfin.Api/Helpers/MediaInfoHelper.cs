@@ -369,9 +369,7 @@ public class MediaInfoHelper
 
     internal static void ApplyAutoFilmDirectPlayOnly(MediaSourceInfo mediaSource)
     {
-        if (mediaSource.Id?.StartsWith(
-                AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
-                StringComparison.Ordinal) != true)
+        if (!AutoFilmRemoteMediaSource.IsAutoFilm(mediaSource))
         {
             return;
         }
@@ -389,13 +387,13 @@ public class MediaInfoHelper
         MediaSourceInfo mediaSource,
         string accessToken)
     {
-        var mediaSourceId = mediaSource.Id;
-        if (mediaSourceId?.StartsWith(
-                AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
-                StringComparison.Ordinal) != true)
+        if (!AutoFilmRemoteMediaSource.IsAutoFilm(mediaSource))
         {
             return;
         }
+
+        var mediaSourceId = mediaSource.Id
+            ?? itemId.ToString("N", CultureInfo.InvariantCulture);
 
         foreach (var stream in mediaSource.MediaStreams)
         {

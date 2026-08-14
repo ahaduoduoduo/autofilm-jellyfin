@@ -105,7 +105,7 @@ namespace Jellyfin.Api.Tests.Helpers
         public void ApplyAutoFilmDirectPlayOnly_RemoteSource_RemovesTranscodingCapability()
         {
             var source = CreateSource(Guid.NewGuid(), bitrate: 80_000_000, supportsDirectPlay: false);
-            source.Id = "autofilm:" + source.Id;
+            source.Path = "openlist:///115/movie/example.mkv";
             source.SupportsProbing = true;
             source.TranscodingUrl = "/videos/item/master.m3u8";
             source.TranscodingContainer = "ts";
@@ -147,7 +147,8 @@ namespace Jellyfin.Api.Tests.Helpers
         {
             var itemId = Guid.NewGuid();
             var source = CreateSource(itemId, bitrate: 80_000_000);
-            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.Id = itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.Path = "openlist:///115/movie/example.mkv";
             source.MediaStreams =
             [
                 new MediaStream
@@ -170,7 +171,7 @@ namespace Jellyfin.Api.Tests.Helpers
             Assert.Equal(SubtitleDeliveryMethod.External, subtitle.DeliveryMethod);
             Assert.False(subtitle.IsExternalUrl);
             Assert.Equal(
-                $"/Videos/{itemId:N}/autofilm%3A{itemId:N}/Subtitles/7/0/Stream.{format}?ApiKey=test%20token",
+                $"/Videos/{itemId:N}/{itemId:N}/Subtitles/7/0/Stream.{format}?ApiKey=test%20token",
                 subtitle.DeliveryUrl);
             Assert.Equal(format, subtitle.Codec);
         }
@@ -180,7 +181,6 @@ namespace Jellyfin.Api.Tests.Helpers
         {
             var itemId = Guid.NewGuid();
             var source = CreateSource(itemId, bitrate: 80_000_000);
-            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
             source.MediaStreams =
             [
                 new MediaStream
@@ -210,7 +210,8 @@ namespace Jellyfin.Api.Tests.Helpers
             var itemId = Guid.NewGuid();
             var item = new Movie { Id = itemId };
             var source = CreateSource(itemId, bitrate: 80_000_000);
-            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.Id = itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.Path = "openlist:///115/movie/example.mkv";
             source.MediaStreams =
             [
                 new MediaStream

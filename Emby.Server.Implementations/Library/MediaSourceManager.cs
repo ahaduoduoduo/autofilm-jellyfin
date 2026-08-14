@@ -205,9 +205,7 @@ namespace Emby.Server.Implementations.Library
                     .ConfigureAwait(false))
                 .ToArray();
             var hasAutoFilmSource = dynamicMediaSources.Any(
-                source => source.Id?.StartsWith(
-                    AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
-                    StringComparison.Ordinal) == true);
+                AutoFilmRemoteMediaSource.IsAutoFilm);
 
             var list = new List<MediaSourceInfo>();
 
@@ -239,9 +237,7 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
 
-                if (source.Id?.StartsWith(
-                        AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
-                        StringComparison.Ordinal) == true)
+                if (AutoFilmRemoteMediaSource.IsAutoFilm(source))
                 {
                     source.SupportsDirectPlay = true;
                     source.SupportsDirectStream = false;

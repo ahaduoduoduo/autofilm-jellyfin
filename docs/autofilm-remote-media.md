@@ -202,12 +202,15 @@ paths containing Chinese or other non-ASCII names therefore remain
 percent-encoded and are valid HTTP response headers.
 
 The generated media source is HTTP, direct-play-only, and reports existing
-Jellyfin `MediaStreams`. After the standard device-profile calculation,
-`MediaInfoHelper` restores the direct-play-only flags for media source IDs with
-the `autofilm:` prefix and clears any generated `TranscodingUrl` and
-transcoding container. Third-party clients therefore receive no usable
-transcoding variant for OpenList media. Local media continues through
-Jellyfin's standard playback capability calculation and may be transcoded.
+Jellyfin `MediaStreams`. Its identifier remains equal to Jellyfin's stable item
+media-source identifier, so clients can associate item metadata with
+PlaybackInfo subtitle streams. AutoFilm sources are identified by their
+`openlist:///` path after the standard device-profile calculation;
+`MediaInfoHelper` then restores the direct-play-only flags and clears any
+generated `TranscodingUrl` and transcoding container. Third-party clients
+therefore receive no usable transcoding variant for OpenList media. Local
+media continues through Jellyfin's standard playback capability calculation
+and may be transcoded.
 
 ## Subtitles
 

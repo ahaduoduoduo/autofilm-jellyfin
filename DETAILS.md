@@ -98,9 +98,10 @@ responsibility:
     responses, including paths with non-ASCII names.
 - `Jellyfin.Api/Helpers/MediaInfoHelper.cs`
   - Applies the normal Jellyfin device-profile calculation, then enforces the
-    final direct-play-only invariant for `autofilm:` OpenList media sources and
-    removes any generated transcoding URL. Local media keeps upstream playback
-    capability behavior.
+    final direct-play-only invariant for `openlist:///` media sources and
+    removes any generated transcoding URL. AutoFilm playback sources retain the
+    stable Jellyfin item media-source ID required by third-party clients. Local
+    media keeps upstream playback capability behavior.
   - Publishes a Jellyfin delivery URL for every external `openlist:///`
     subtitle after device-profile handling, so ASS, SRT, SUP and other original
     formats remain available to third-party clients without enabling remote

@@ -52,7 +52,10 @@ public sealed class AutoFilmRemoteMediaSourceProvider : IMediaSourceProvider
         [
             new MediaSourceInfo
             {
-                Id = AutoFilmRemoteMediaSource.MediaSourceIdPrefix + item.Id.ToString("N"),
+                // Keep the dynamic source identifier equal to Jellyfin's stable item source
+                // identifier. Infuse associates PlaybackInfo subtitle streams with the
+                // MediaSources returned by item metadata using this value.
+                Id = item.Id.ToString("N"),
                 Name = "AutoFilm OpenList",
                 Path = item.Path,
                 Protocol = MediaProtocol.Http,

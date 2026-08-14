@@ -4,6 +4,10 @@ Updated: 2026-08-14
 
 ## Completed
 
+- [x] 2026-08-14: Keep AutoFilm PlaybackInfo media-source IDs equal to the
+  stable item media-source IDs so Infuse can associate external ASS, SRT and
+  SUP streams with direct-play OpenList videos.
+
 - [x] 2026-08-14: Publish Jellyfin subtitle delivery URLs for every external
   OpenList subtitle after device-profile handling, independently of remote
   transcoding support, while preserving original-format OpenList 302 delivery.
