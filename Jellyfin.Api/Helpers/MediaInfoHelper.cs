@@ -85,12 +85,14 @@ public class MediaInfoHelper
     /// <param name="user">The user.</param>
     /// <param name="mediaSourceId">Media source id.</param>
     /// <param name="liveStreamId">Live stream id.</param>
+    /// <param name="accessToken">Access token used by external subtitle URLs.</param>
     /// <returns>A <see cref="Task"/> containing the <see cref="PlaybackInfoResponse"/>.</returns>
     public async Task<PlaybackInfoResponse> GetPlaybackInfo(
         BaseItem item,
         User? user,
         string? mediaSourceId = null,
-        string? liveStreamId = null)
+        string? liveStreamId = null,
+        string? accessToken = null)
     {
         var result = new PlaybackInfoResponse();
 
@@ -142,6 +144,17 @@ public class MediaInfoHelper
             }
 
             result.PlaySessionId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            foreach (var mediaSource in result.MediaSources)
+            {
+                ApplyAutoFilmExternalSubtitleDelivery(
+                    item.Id,
+                    mediaSource,
+                    accessToken);
+            }
         }
 
         return result;

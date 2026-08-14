@@ -1,9 +1,12 @@
 using System;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using Jellyfin.Api.Helpers;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
+using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Model.Dlna;
@@ -199,6 +202,55 @@ namespace Jellyfin.Api.Tests.Helpers
             Assert.False(subtitle.SupportsExternalStream);
             Assert.Null(subtitle.DeliveryMethod);
             Assert.Null(subtitle.DeliveryUrl);
+        }
+
+        [Fact]
+        public async Task GetPlaybackInfo_WithoutDeviceProfile_ExposesRemoteSubtitle()
+        {
+            var itemId = Guid.NewGuid();
+            var item = new Movie { Id = itemId };
+            var source = CreateSource(itemId, bitrate: 80_000_000);
+            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.MediaStreams =
+            [
+                new MediaStream
+                {
+                    Type = MediaStreamType.Subtitle,
+                    Index = 2,
+                    Codec = "ass",
+                    IsExternal = true,
+                    Path = "openlist:///115/movie/example.zh.ass"
+                }
+            ];
+
+            var mediaSourceManager = new Mock<IMediaSourceManager>();
+            mediaSourceManager
+                .Setup(manager => manager.GetPlaybackMediaSources(
+                    item,
+                    null!,
+                    true,
+                    true,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync([source]);
+            var helper = new MediaInfoHelper(
+                Mock.Of<IUserManager>(),
+                Mock.Of<ILibraryManager>(),
+                mediaSourceManager.Object,
+                Mock.Of<IMediaEncoder>(),
+                Mock.Of<IServerConfigurationManager>(),
+                Mock.Of<ILogger<MediaInfoHelper>>(),
+                Mock.Of<INetworkManager>(),
+                Mock.Of<IDeviceManager>());
+
+            var result = await helper.GetPlaybackInfo(
+                item,
+                null,
+                accessToken: "test-token");
+
+            var returnedSource = Assert.Single(result.MediaSources);
+            var subtitle = Assert.Single(returnedSource.MediaStreams);
+            Assert.Equal(SubtitleDeliveryMethod.External, subtitle.DeliveryMethod);
+            Assert.NotNull(subtitle.DeliveryUrl);
         }
     }
 }

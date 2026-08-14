@@ -84,7 +84,10 @@ public class MediaInfoController : BaseJellyfinApiController
             return NotFound();
         }
 
-        return await _mediaInfoHelper.GetPlaybackInfo(item, user).ConfigureAwait(false);
+        return await _mediaInfoHelper.GetPlaybackInfo(
+            item,
+            user,
+            accessToken: User.GetToken()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -178,7 +181,8 @@ public class MediaInfoController : BaseJellyfinApiController
                 item,
                 user,
                 mediaSourceId,
-                liveStreamId)
+                liveStreamId,
+                User.GetToken())
             .ConfigureAwait(false);
 
         if (info.ErrorCode is not null)
