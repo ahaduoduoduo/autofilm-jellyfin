@@ -609,6 +609,7 @@ namespace Emby.Server.Implementations
                 provider => provider.GetRequiredService<AutoFilmRemoteProbeQueue>());
             serviceCollection.AddHostedService(
                 provider => provider.GetRequiredService<AutoFilmRemoteProbeQueue>());
+            serviceCollection.AddHostedService<AutoFilmRemoteMediaHealthMonitor>();
 
             serviceCollection.AddSingleton<ISubtitleManager, SubtitleManager>();
             serviceCollection.AddSingleton<ILyricManager, LyricManager>();

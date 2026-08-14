@@ -64,6 +64,10 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
   - Single-concurrency, minimum-interval ffprobe queue for new videos and
     historical remote videos whose runtime or embedded video stream is absent.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaHealthMonitor.cs`
+  - Checks completed OpenList metadata refreshes using Jellyfin's local stream
+    database and queues an incomplete video for the existing rate-limited
+    probe service without polling OpenList or scanning the full library.
 - `Jellyfin.Api/Controllers/ItemRefreshController.cs`
   - Keeps the upstream metadata refresh behavior and additionally queues an
     OpenList Movie or Episode for a non-forced probe. The queue skips items
@@ -87,7 +91,9 @@ responsibility:
     insertion, stale stream removal, remote deletion, and raw local SUP
     delivery.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaSourceProvider.cs`
-  - Dynamic HTTP direct-play source using existing Jellyfin media streams.
+  - Dynamic HTTP direct-play source using existing Jellyfin media streams; a
+    PlaybackInfo request also schedules repair when tracks or runtime are
+    absent.
 - `Emby.Server.Implementations/Library/LibraryManager.cs`
   - Lets Jellyfin's standard episode-name parser consume the underlying
     OpenList path when filling missing season and episode numbers.

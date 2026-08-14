@@ -99,7 +99,8 @@ public class ItemRefreshController : BaseJellyfinApiController
         {
             // A metadata refresh does not necessarily inspect an unchanged
             // remote file. The queue skips items that already have an embedded
-            // video stream, so healthy OpenList items cause no storage read.
+            // video stream and a valid runtime, so healthy OpenList items cause
+            // no storage read.
             _remoteProbeQueue.Enqueue(item.Id, false);
         }
 

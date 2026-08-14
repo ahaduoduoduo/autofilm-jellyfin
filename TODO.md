@@ -4,6 +4,10 @@ Updated: 2026-08-14
 
 ## Completed
 
+- [x] 2026-08-14: Detect OpenList videos with no embedded video stream or no
+  runtime after metadata refresh and while producing PlaybackInfo, then queue
+  only those items for serialized rate-limited media probing.
+
 - [x] 2026-08-14: Preserve Infuse resume positions for OpenList videos whose
   runtime is temporarily unavailable, and retry remote probing on an explicit
   metadata refresh when an embedded video stream exists but runtime is absent.

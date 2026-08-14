@@ -1,20 +1,19 @@
 using System;
-using System.Globalization;
-using System.Threading.Tasks;
 using Emby.Server.Implementations.AutoFilm;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Persistence;
+using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using Moq;
 using Xunit;
 
 namespace Jellyfin.Server.Implementations.Tests.AutoFilm;
 
-public sealed class AutoFilmRemoteMediaSourceProviderTests
+public sealed class AutoFilmRemoteMediaHealthMonitorTests
 {
     [Fact]
-    public async Task GetMediaSources_RemoteItem_PreservesStableItemSourceId()
+    public void Inspect_IncompleteRemoteVideo_QueuesProbe()
     {
         var itemId = Guid.NewGuid();
         var repository = new Mock<IMediaStreamRepository>();
@@ -23,31 +22,24 @@ public sealed class AutoFilmRemoteMediaSourceProviderTests
                 It.Is<MediaStreamQuery>(query => query.ItemId.Equals(itemId))))
             .Returns([]);
         var probeQueue = new Mock<IAutoFilmRemoteProbeQueue>();
-        var provider = new AutoFilmRemoteMediaSourceProvider(
+        var monitor = new AutoFilmRemoteMediaHealthMonitor(
+            Mock.Of<IProviderManager>(),
             repository.Object,
             probeQueue.Object);
-        var movie = new Movie
+
+        monitor.Inspect(new Movie
         {
             Id = itemId,
             Path = "openlist:///115/movie/example.mkv"
-        };
+        });
 
-        var sources = await provider.GetMediaSources(
-            movie,
-            TestContext.Current.CancellationToken);
-
-        var source = Assert.Single(sources);
-        Assert.Equal(itemId.ToString("N", CultureInfo.InvariantCulture), source.Id);
-        Assert.Equal(movie.Path, source.Path);
-        Assert.True(source.SupportsDirectPlay);
-        Assert.False(source.SupportsTranscoding);
         probeQueue.Verify(
             instance => instance.Enqueue(itemId, false),
             Times.Once);
     }
 
     [Fact]
-    public async Task GetMediaSources_HealthyRemoteItem_DoesNotQueueProbe()
+    public void Inspect_HealthyRemoteVideo_DoesNotQueueProbe()
     {
         var itemId = Guid.NewGuid();
         var repository = new Mock<IMediaStreamRepository>();
@@ -63,20 +55,42 @@ public sealed class AutoFilmRemoteMediaSourceProviderTests
                 }
             ]);
         var probeQueue = new Mock<IAutoFilmRemoteProbeQueue>();
-        var provider = new AutoFilmRemoteMediaSourceProvider(
+        var monitor = new AutoFilmRemoteMediaHealthMonitor(
+            Mock.Of<IProviderManager>(),
             repository.Object,
             probeQueue.Object);
-        var movie = new Movie
+
+        monitor.Inspect(new Movie
         {
             Id = itemId,
             Path = "openlist:///115/movie/example.mkv",
             RunTimeTicks = 1
-        };
+        });
 
-        _ = await provider.GetMediaSources(
-            movie,
-            TestContext.Current.CancellationToken);
+        probeQueue.Verify(
+            instance => instance.Enqueue(It.IsAny<Guid>(), It.IsAny<bool>()),
+            Times.Never);
+    }
 
+    [Fact]
+    public void Inspect_LocalVideo_DoesNotReadStreamsOrQueueProbe()
+    {
+        var repository = new Mock<IMediaStreamRepository>();
+        var probeQueue = new Mock<IAutoFilmRemoteProbeQueue>();
+        var monitor = new AutoFilmRemoteMediaHealthMonitor(
+            Mock.Of<IProviderManager>(),
+            repository.Object,
+            probeQueue.Object);
+
+        monitor.Inspect(new Movie
+        {
+            Id = Guid.NewGuid(),
+            Path = "/media/movie/example.mkv"
+        });
+
+        repository.Verify(
+            instance => instance.GetMediaStreams(It.IsAny<MediaStreamQuery>()),
+            Times.Never);
         probeQueue.Verify(
             instance => instance.Enqueue(It.IsAny<Guid>(), It.IsAny<bool>()),
             Times.Never);

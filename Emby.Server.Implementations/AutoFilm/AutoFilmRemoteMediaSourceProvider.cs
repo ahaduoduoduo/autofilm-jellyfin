@@ -19,16 +19,20 @@ namespace Emby.Server.Implementations.AutoFilm;
 public sealed class AutoFilmRemoteMediaSourceProvider : IMediaSourceProvider
 {
     private readonly IMediaStreamRepository _mediaStreamRepository;
+    private readonly IAutoFilmRemoteProbeQueue _probeQueue;
 
     /// <summary>
     /// Initializes a new instance of the
     /// <see cref="AutoFilmRemoteMediaSourceProvider"/> class.
     /// </summary>
     /// <param name="mediaStreamRepository">Jellyfin media stream repository.</param>
+    /// <param name="probeQueue">Rate-limited OpenList media probe queue.</param>
     public AutoFilmRemoteMediaSourceProvider(
-        IMediaStreamRepository mediaStreamRepository)
+        IMediaStreamRepository mediaStreamRepository,
+        IAutoFilmRemoteProbeQueue probeQueue)
     {
         _mediaStreamRepository = mediaStreamRepository;
+        _probeQueue = probeQueue;
     }
 
     /// <inheritdoc />
@@ -43,6 +47,15 @@ public sealed class AutoFilmRemoteMediaSourceProvider : IMediaSourceProvider
 
         var mediaStreams = _mediaStreamRepository.GetMediaStreams(
             new MediaStreamQuery { ItemId = item.Id });
+        if (item is Video video
+            && AutoFilmRemoteProbeQueue.RequiresProbe(
+                video,
+                mediaStreams,
+                false))
+        {
+            _probeQueue.Enqueue(item.Id, false);
+        }
+
         foreach (var stream in mediaStreams)
         {
             AutoFilmSubtitleCompatibility.NormalizeExternalSup(stream);

@@ -100,6 +100,13 @@ internal OpenList download URL; the result updates tracks, width, height,
 runtime, bitrate, container and remote object size without changing Item ID,
 provider IDs, images or user data.
 
+After any Jellyfin metadata refresh completes, an event-driven health check
+reads only the local media-stream repository. If an OpenList video has no
+embedded video stream or no positive runtime, it enters the same serialized,
+rate-limited probe queue. PlaybackInfo generation performs the same local
+check so historical incomplete items repair themselves when accessed. These
+checks do not poll OpenList, enumerate the library, or probe healthy items.
+
 When `refresh:true`, the exact target object lookup refreshes its OpenList
 parent directory before resolving the target. This is required after a remote
 offline task succeeds because the provider result can exist while OpenList's
