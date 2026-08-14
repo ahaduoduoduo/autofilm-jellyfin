@@ -8,6 +8,7 @@ using System.Threading;
 using BitFaster.Caching.Lru;
 using Jellyfin.Database.Implementations;
 using Jellyfin.Database.Implementations.Entities;
+using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -491,9 +492,18 @@ namespace Emby.Server.Implementations.Library
             }
             else if (!hasRuntime)
             {
-                // If we don't know the runtime we'll just have to assume it was fully played
-                data.Played = playedToCompletion = true;
-                positionTicks = 0;
+                if (AutoFilmRemotePath.IsRemote(item.Path))
+                {
+                    // A remote probe can temporarily fail while the media remains playable.
+                    // Preserve the client-reported position until the runtime is available.
+                    data.Played = false;
+                }
+                else
+                {
+                    // If we don't know the runtime we'll just have to assume it was fully played
+                    data.Played = playedToCompletion = true;
+                    positionTicks = 0;
+                }
             }
 
             if (!item.SupportsPlayedStatus)

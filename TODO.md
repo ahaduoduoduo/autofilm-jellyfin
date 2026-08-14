@@ -4,6 +4,10 @@ Updated: 2026-08-14
 
 ## Completed
 
+- [x] 2026-08-14: Preserve Infuse resume positions for OpenList videos whose
+  runtime is temporarily unavailable, and retry remote probing on an explicit
+  metadata refresh when an embedded video stream exists but runtime is absent.
+
 - [x] 2026-08-14: Keep AutoFilm PlaybackInfo media-source IDs equal to the
   stable item media-source IDs so Infuse can associate external ASS, SRT and
   SUP streams with direct-play OpenList videos.

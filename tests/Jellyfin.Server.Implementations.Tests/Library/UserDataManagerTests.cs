@@ -213,4 +213,40 @@ public sealed class UserDataManagerTests : IDisposable
         var item = CreateAudioBook();
         Assert.Throws<ArgumentNullException>(() => _userDataManager.GetUserData(null!, item));
     }
+
+    [Fact]
+    public void UpdatePlayState_UnknownRuntimeRemoteVideo_PreservesReportedPosition()
+    {
+        var item = new Video
+        {
+            Path = "openlist:///115/nvideo/movie/example.mkv"
+        };
+        var data = new UserItemData();
+        var reportedPosition = TimeSpan.FromMinutes(12).Ticks;
+
+        var completed = _userDataManager.UpdatePlayState(item, data, reportedPosition);
+
+        Assert.False(completed);
+        Assert.False(data.Played);
+        Assert.Equal(reportedPosition, data.PlaybackPositionTicks);
+    }
+
+    [Fact]
+    public void UpdatePlayState_UnknownRuntimeLocalVideo_RetainsUpstreamCompletionBehavior()
+    {
+        var item = new Video
+        {
+            Path = "/media/movie/example.mkv"
+        };
+        var data = new UserItemData();
+
+        var completed = _userDataManager.UpdatePlayState(
+            item,
+            data,
+            TimeSpan.FromMinutes(12).Ticks);
+
+        Assert.True(completed);
+        Assert.True(data.Played);
+        Assert.Equal(0, data.PlaybackPositionTicks);
+    }
 }

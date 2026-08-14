@@ -62,7 +62,8 @@ responsibility:
   - Reparents replacements to the persisted containing folder before insertion
     so a removed wrapper cannot remain as a database foreign-key target.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteProbeQueue.cs`
-  - Single-concurrency, minimum-interval ffprobe queue for new videos.
+  - Single-concurrency, minimum-interval ffprobe queue for new videos and
+    historical remote videos whose runtime or embedded video stream is absent.
 - `Jellyfin.Api/Controllers/ItemRefreshController.cs`
   - Keeps the upstream metadata refresh behavior and additionally queues an
     OpenList Movie or Episode for a non-forced probe. The queue skips items
@@ -126,6 +127,10 @@ responsibility:
     media-library roots retain their upstream non-deletable behavior.
 - `Emby.Server.Implementations/Library/MediaSourceManager.cs`
   - Prevents local filesystem probing and normalizes external SUP streams.
+- `Emby.Server.Implementations/Library/UserDataManager.cs`
+  - Preserves a client-reported resume position for an OpenList video when a
+    temporary remote probe failure has left its runtime unknown; local media
+    retains the upstream unknown-runtime behavior.
 - `Emby.Server.Implementations/Library/LibraryManager.cs`
   - Accepts `Local` and `OpenList` media sources and persists OpenList roots as
     normal library locations.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -134,9 +135,7 @@ public sealed class AutoFilmRemoteProbeQueue
 
         var existingStreams = _mediaStreamRepository.GetMediaStreams(
             new MediaStreamQuery { ItemId = itemId });
-        if (!force && existingStreams.Any(
-                stream => !stream.IsExternal
-                    && stream.Type == MediaStreamType.Video))
+        if (!RequiresProbe(video, existingStreams, force))
         {
             return;
         }
@@ -196,6 +195,18 @@ public sealed class AutoFilmRemoteProbeQueue
             "AutoFilm remote probe saved {StreamCount} streams for {ItemId}",
             streams.Length,
             itemId);
+    }
+
+    internal static bool RequiresProbe(
+        Video video,
+        IReadOnlyList<MediaStream> existingStreams,
+        bool force)
+    {
+        return force
+            || video.RunTimeTicks.GetValueOrDefault() <= 0
+            || !existingStreams.Any(
+                stream => !stream.IsExternal
+                    && stream.Type == MediaStreamType.Video);
     }
 
     private sealed record ProbeRequest(Guid ItemId);

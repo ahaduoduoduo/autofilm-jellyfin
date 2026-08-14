@@ -93,11 +93,12 @@ An administrator's standard Jellyfin metadata refresh also enqueues the exact
 OpenList Movie or Episode with `force=false`. This covers historical records
 whose path and metadata exist but whose ffprobe never completed. The queue
 checks the stored streams before accessing OpenList and returns immediately
-when an embedded video stream already exists, so refreshing a healthy remote
-item does not read the provider or replace valid tracks. A streamless item is
-probed through the authenticated internal OpenList download URL; the result
-updates tracks, width, height, runtime, bitrate, container and remote object
-size without changing Item ID, provider IDs, images or user data.
+when both an embedded video stream and a positive runtime already exist, so
+refreshing a healthy remote item does not read the provider or replace valid
+tracks. An item without either value is probed through the authenticated
+internal OpenList download URL; the result updates tracks, width, height,
+runtime, bitrate, container and remote object size without changing Item ID,
+provider IDs, images or user data.
 
 When `refresh:true`, the exact target object lookup refreshes its OpenList
 parent directory before resolving the target. This is required after a remote
@@ -211,6 +212,13 @@ generated `TranscodingUrl` and transcoding container. Third-party clients
 therefore receive no usable transcoding variant for OpenList media. Local
 media continues through Jellyfin's standard playback capability calculation
 and may be transcoded.
+
+Infuse and other clients report playback positions through Jellyfin's normal
+session endpoints. If an OpenList item is temporarily missing runtime because
+its remote probe failed, Jellyfin preserves the reported position instead of
+applying the upstream unknown-runtime assumption that the item was fully
+played. Runtime-based completion thresholds resume automatically after a
+successful probe. Local media retains the upstream behavior.
 
 ## Subtitles
 
