@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-08-06
+Updated: 2026-08-14
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
@@ -101,6 +101,10 @@ responsibility:
     final direct-play-only invariant for `autofilm:` OpenList media sources and
     removes any generated transcoding URL. Local media keeps upstream playback
     capability behavior.
+  - Publishes a Jellyfin delivery URL for every external `openlist:///`
+    subtitle after device-profile handling, so ASS, SRT, SUP and other original
+    formats remain available to third-party clients without enabling remote
+    transcoding.
 - `Jellyfin.Api/Controllers/VideosController.cs`
   - `openlist:///` video redirects.
 - `Jellyfin.Api/Controllers/SubtitleController.cs`

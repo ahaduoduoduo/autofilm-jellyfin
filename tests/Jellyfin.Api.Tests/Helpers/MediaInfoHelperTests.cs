@@ -6,7 +6,9 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
+using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.MediaInfo;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -131,6 +133,72 @@ namespace Jellyfin.Api.Tests.Helpers
             Assert.True(source.SupportsProbing);
             Assert.Equal("/videos/item/master.m3u8", source.TranscodingUrl);
             Assert.Equal("ts", source.TranscodingContainer);
+        }
+
+        [Theory]
+        [InlineData("ass")]
+        [InlineData("srt")]
+        [InlineData("sup")]
+        public void ApplyAutoFilmExternalSubtitleDelivery_RemoteSubtitle_ExposesJellyfinRoute(
+            string format)
+        {
+            var itemId = Guid.NewGuid();
+            var source = CreateSource(itemId, bitrate: 80_000_000);
+            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.MediaStreams =
+            [
+                new MediaStream
+                {
+                    Type = MediaStreamType.Subtitle,
+                    Index = 7,
+                    Codec = format == "sup" ? "PGSSUB" : format,
+                    IsExternal = true,
+                    Path = $"openlist:///115/movie/example.zh.{format}"
+                }
+            ];
+
+            MediaInfoHelper.ApplyAutoFilmExternalSubtitleDelivery(
+                itemId,
+                source,
+                "test token");
+
+            var subtitle = Assert.Single(source.MediaStreams);
+            Assert.True(subtitle.SupportsExternalStream);
+            Assert.Equal(SubtitleDeliveryMethod.External, subtitle.DeliveryMethod);
+            Assert.False(subtitle.IsExternalUrl);
+            Assert.Equal(
+                $"/Videos/{itemId:N}/autofilm%3A{itemId:N}/Subtitles/7/0/Stream.{format}?ApiKey=test%20token",
+                subtitle.DeliveryUrl);
+            Assert.Equal(format, subtitle.Codec);
+        }
+
+        [Fact]
+        public void ApplyAutoFilmExternalSubtitleDelivery_LocalSubtitle_LeavesStreamUnchanged()
+        {
+            var itemId = Guid.NewGuid();
+            var source = CreateSource(itemId, bitrate: 80_000_000);
+            source.Id = "autofilm:" + itemId.ToString("N", CultureInfo.InvariantCulture);
+            source.MediaStreams =
+            [
+                new MediaStream
+                {
+                    Type = MediaStreamType.Subtitle,
+                    Index = 4,
+                    Codec = "srt",
+                    IsExternal = true,
+                    Path = "/movie/example.zh.srt"
+                }
+            ];
+
+            MediaInfoHelper.ApplyAutoFilmExternalSubtitleDelivery(
+                itemId,
+                source,
+                "test-token");
+
+            var subtitle = Assert.Single(source.MediaStreams);
+            Assert.False(subtitle.SupportsExternalStream);
+            Assert.Null(subtitle.DeliveryMethod);
+            Assert.Null(subtitle.DeliveryUrl);
         }
     }
 }

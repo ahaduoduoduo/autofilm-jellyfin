@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -336,6 +337,10 @@ public class MediaInfoHelper
             mediaSource.DefaultAudioStreamIndex = streamInfo.AudioStreamIndex;
         }
 
+        ApplyAutoFilmExternalSubtitleDelivery(
+            item.Id,
+            mediaSource,
+            claimsPrincipal.GetToken()!);
         ApplyAutoFilmDirectPlayOnly(mediaSource);
 
         foreach (var attachment in mediaSource.MediaAttachments)
@@ -364,6 +369,51 @@ public class MediaInfoHelper
         mediaSource.SupportsProbing = false;
         mediaSource.TranscodingUrl = null;
         mediaSource.TranscodingContainer = null;
+    }
+
+    internal static void ApplyAutoFilmExternalSubtitleDelivery(
+        Guid itemId,
+        MediaSourceInfo mediaSource,
+        string accessToken)
+    {
+        var mediaSourceId = mediaSource.Id;
+        if (mediaSourceId?.StartsWith(
+                AutoFilmRemoteMediaSource.MediaSourceIdPrefix,
+                StringComparison.Ordinal) != true)
+        {
+            return;
+        }
+
+        foreach (var stream in mediaSource.MediaStreams)
+        {
+            if (stream.Type != MediaStreamType.Subtitle
+                || !stream.IsExternal
+                || !AutoFilmRemotePath.TryGetOpenListPath(
+                    stream.Path,
+                    out var remotePath))
+            {
+                continue;
+            }
+
+            var format = Path.GetExtension(remotePath).TrimStart('.');
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                continue;
+            }
+
+            AutoFilmSubtitleCompatibility.NormalizeExternalSup(stream);
+            stream.SupportsExternalStream = true;
+            stream.DeliveryMethod = SubtitleDeliveryMethod.External;
+            stream.IsExternalUrl = false;
+            stream.DeliveryUrl = string.Format(
+                CultureInfo.InvariantCulture,
+                "/Videos/{0}/{1}/Subtitles/{2}/0/Stream.{3}?ApiKey={4}",
+                itemId.ToString("N", CultureInfo.InvariantCulture),
+                Uri.EscapeDataString(mediaSourceId),
+                stream.Index.ToString(CultureInfo.InvariantCulture),
+                Uri.EscapeDataString(format),
+                Uri.EscapeDataString(accessToken));
+        }
     }
 
     /// <summary>

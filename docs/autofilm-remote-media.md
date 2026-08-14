@@ -1,6 +1,6 @@
 # AutoFilm remote media behavior
 
-Updated: 2026-08-06
+Updated: 2026-08-14
 
 ## Persistent model
 
@@ -213,16 +213,21 @@ Jellyfin's standard playback capability calculation and may be transcoded.
 
 For an external `openlist:///` subtitle:
 
-1. Return OpenList 302 when the remote path exists.
-2. On explicit remote 404, remove the stale stream record.
-3. Authentication, network, or provider failures never remove the record.
+1. PlaybackInfo always exposes a Jellyfin subtitle route, independently of
+   transcoding and device-profile results.
+2. Return OpenList 302 when the remote path exists.
+3. On explicit remote 404, remove the stale stream record.
+4. Authentication, network, or provider failures never remove the record.
 
 The resolver accepts `.ass`, `.ssa`, `.srt`, `.vtt`, `.sub`, `.idx`, and
 `.sup`. `openlist:///` is an AutoFilm database URI rather than a path understood
-by upstream Jellyfin; `AutoFilmSubtitleService` resolves it before a client
-receives the subtitle response. The remote response serves the original
-subtitle format. A request that asks Jellyfin to convert ASS/SRT to another
-format does not pass the remote source through Jellyfin's subtitle encoder.
+by upstream Jellyfin; `MediaInfoHelper` publishes a server-relative Jellyfin
+subtitle URL for every such external stream, and `AutoFilmSubtitleService`
+resolves that request. This publication happens after normal device-profile
+handling and does not depend on a transcoding variant being available. The
+remote response serves the original subtitle format with an OpenList 302. A
+request that asks Jellyfin to convert ASS/SRT to another format does not pass
+the remote source through Jellyfin's subtitle encoder.
 
 Jellyfin's standard `/Videos/{id}/Subtitles` JSON endpoint remains compatible
 with Jellyfin Web, third-party clients, and plugins. AutoFilm Core sends every

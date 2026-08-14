@@ -1,8 +1,12 @@
 # AutoFilm development status
 
-Updated: 2026-08-10
+Updated: 2026-08-14
 
 ## Completed
+
+- [x] 2026-08-14: Publish Jellyfin subtitle delivery URLs for every external
+  OpenList subtitle after device-profile handling, independently of remote
+  transcoding support, while preserving original-format OpenList 302 delivery.
 
 - [x] 2026-08-06: Add explicit additive and full OpenList scan modes. Full
   rescans require a fresh bounded snapshot, remove database-only descendants,
