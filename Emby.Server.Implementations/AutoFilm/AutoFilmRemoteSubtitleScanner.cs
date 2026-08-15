@@ -18,7 +18,7 @@ namespace Emby.Server.Implementations.AutoFilm;
 /// <summary>
 /// Synchronizes OpenList sidecar subtitle records from a bounded directory snapshot.
 /// </summary>
-internal sealed class AutoFilmRemoteSubtitleScanner
+public sealed class AutoFilmRemoteSubtitleScanner
 {
     private readonly IMediaStreamRepository _mediaStreamRepository;
     private readonly ExternalPathParser _pathParser;
