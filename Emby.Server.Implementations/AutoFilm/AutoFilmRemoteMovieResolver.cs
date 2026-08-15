@@ -29,18 +29,37 @@ internal static class AutoFilmRemoteMovieResolver
     /// <param name="parent">Persisted parent.</param>
     /// <param name="snapshot">Bounded OpenList snapshot.</param>
     /// <param name="libraryManager">Jellyfin library manager.</param>
+    /// <param name="preserveMovieIdentity">Whether an existing movie identity must be preserved.</param>
     /// <returns>The resolved item.</returns>
     internal static BaseItem? ResolveEntry(
         FileSystemMetadata entry,
         Folder parent,
         AutoFilmDirectorySnapshot snapshot,
-        ILibraryManager libraryManager)
+        ILibraryManager libraryManager,
+        bool preserveMovieIdentity = false)
     {
         var resolved = libraryManager.ResolvePath(
             entry,
             parent,
             snapshot,
             libraryManager.GetContentType(parent));
+        if (preserveMovieIdentity
+            && !entry.IsDirectory
+            && resolved is Video and not Movie
+            && BelongsToVirtualMovieLibrary(parent, libraryManager))
+        {
+            var movie = libraryManager.ResolvePath(
+                entry,
+                parent,
+                snapshot,
+                CollectionType.movies) as Movie;
+            if (movie is not null)
+            {
+                movie.IsInMixedFolder = false;
+                return movie;
+            }
+        }
+
         if (resolved is not Folder releaseFolder)
         {
             return resolved;
@@ -83,18 +102,7 @@ internal static class AutoFilmRemoteMovieResolver
             && libraryManager.GetLibraryOptions(libraryParent)
                 .GetTypeOptions(nameof(Movie)) is not null;
         var belongsToVirtualMovieLibrary = collectionType is null
-            && libraryManager.GetVirtualFolders()?.Any(folder =>
-                folder.CollectionType == CollectionTypeOptions.movies
-                && folder.Locations.Any(location =>
-                    AutoFilmRemotePath.TryGetOpenListPath(
-                        location,
-                        out var rootPath)
-                    && AutoFilmRemotePath.TryGetOpenListPath(
-                        libraryParent.Path,
-                        out var parentPath)
-                    && AutoFilmRemotePath.IsWithinOpenListRoot(
-                        parentPath,
-                        rootPath))) == true;
+            && BelongsToVirtualMovieLibrary(libraryParent, libraryManager);
         if (!directoryEntry.IsDirectory
             || (collectionType != CollectionType.movies
                 && !hasMovieOptions
@@ -141,6 +149,24 @@ internal static class AutoFilmRemoteMovieResolver
         movie.IsInMixedFolder = false;
         movie.Name = directoryEntry.Name;
         return movie;
+    }
+
+    private static bool BelongsToVirtualMovieLibrary(
+        Folder parent,
+        ILibraryManager libraryManager)
+    {
+        return libraryManager.GetVirtualFolders()?.Any(folder =>
+            folder.CollectionType == CollectionTypeOptions.movies
+            && folder.Locations.Any(location =>
+                AutoFilmRemotePath.TryGetOpenListPath(
+                    location,
+                    out var rootPath)
+                && AutoFilmRemotePath.TryGetOpenListPath(
+                    parent.Path,
+                    out var parentPath)
+                && AutoFilmRemotePath.IsWithinOpenListRoot(
+                    parentPath,
+                    rootPath))) == true;
     }
 
     /// <summary>

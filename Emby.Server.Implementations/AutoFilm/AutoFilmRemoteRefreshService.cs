@@ -21,6 +21,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
     private readonly IAutoFilmOpenListClient _openListClient;
     private readonly AutoFilmRemoteReconciler _reconciler;
     private readonly IAutoFilmRemoteProbeQueue _probeQueue;
+    private readonly AutoFilmRemoteSubtitleScanner _subtitleScanner;
     private readonly IAutoFilmRemoteLibraryRoots _remoteLibraryRoots;
     private readonly AutoFilmOptions _options;
 
@@ -33,6 +34,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
     /// <param name="openListClient">OpenList path API.</param>
     /// <param name="reconciler">Full remote database reconciliation.</param>
     /// <param name="probeQueue">Serialized remote ffprobe queue.</param>
+    /// <param name="subtitleScanner">OpenList sidecar subtitle scanner.</param>
     /// <param name="remoteLibraryRoots">Configured OpenList library roots.</param>
     /// <param name="options">AutoFilm configuration.</param>
     public AutoFilmRemoteRefreshService(
@@ -41,6 +43,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         IAutoFilmOpenListClient openListClient,
         AutoFilmRemoteReconciler reconciler,
         IAutoFilmRemoteProbeQueue probeQueue,
+        AutoFilmRemoteSubtitleScanner subtitleScanner,
         IAutoFilmRemoteLibraryRoots remoteLibraryRoots,
         AutoFilmOptions options)
     {
@@ -49,6 +52,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         _openListClient = openListClient;
         _reconciler = reconciler;
         _probeQueue = probeQueue;
+        _subtitleScanner = subtitleScanner;
         _remoteLibraryRoots = remoteLibraryRoots;
         _options = options;
     }
@@ -154,6 +158,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
                 reconcile.Item,
                 request,
                 load.Snapshot,
+                fullScan,
                 cancellationToken).ConfigureAwait(false);
             return CreateResult(
                 fullScan ? "rescanned" : "refreshed",
@@ -239,6 +244,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             resolvedItem,
             request,
             load.Snapshot,
+            fullScan,
             cancellationToken).ConfigureAwait(false);
         return CreateResult(
             "created",
@@ -253,6 +259,7 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         BaseItem resolvedItem,
         AutoFilmRemoteRefreshRequest request,
         AutoFilmDirectorySnapshot snapshot,
+        bool fullScan,
         CancellationToken cancellationToken)
     {
         var importResult = resolvedItem is Folder folder
@@ -279,6 +286,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         await AutoFilmRemoteProviderTargetResolver.PrepareEpisodesAsync(
             videos,
             _libraryManager,
+            cancellationToken).ConfigureAwait(false);
+        await _subtitleScanner.SynchronizeAsync(
+            videos,
+            snapshot,
+            fullScan,
             cancellationToken).ConfigureAwait(false);
         AutoFilmRemoteProviderTargetResolver.ApplyProviderIds(
             providerTarget,
@@ -507,6 +519,27 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
 
         var target = snapshot.GetFileSystemEntry(
             AutoFilmRemotePath.FromOpenListPath(targetPath));
+        if (target?.IsDirectory == false)
+        {
+            var parentPath = GetParentPath(targetPath);
+            var parentWasListed = listed.Contains(parentPath);
+            var count = await LoadDirectoryAsync(
+                parentPath,
+                refresh,
+                snapshot,
+                listed,
+                cancellationToken,
+                AutoFilmRemotePath.FromOpenListPath(targetPath))
+                .ConfigureAwait(false);
+            if (!parentWasListed)
+            {
+                directoriesRead++;
+                objectsRead += count;
+                EnforceDirectoryLimit(directoriesRead);
+                EnforceObjectLimit(objectsRead);
+            }
+        }
+
         if (recursive && target?.IsDirectory == true)
         {
             var queue = new Queue<string>();
@@ -629,7 +662,8 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         bool refresh,
         AutoFilmDirectorySnapshot snapshot,
         HashSet<string> listed,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? requiredRemotePath = null)
     {
         if (!listed.Add(path))
         {
@@ -640,6 +674,15 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             path,
             refresh,
             cancellationToken).ConfigureAwait(false);
+        if (requiredRemotePath is null
+            || objects.Any(obj => string.Equals(
+                AutoFilmRemotePath.FromOpenListPath(obj.Path),
+                requiredRemotePath,
+                StringComparison.Ordinal)))
+        {
+            snapshot.MarkDirectoryEnumerated(path);
+        }
+
         foreach (var obj in objects)
         {
             snapshot.Add(obj);

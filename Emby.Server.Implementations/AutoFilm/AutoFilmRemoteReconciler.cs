@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -67,7 +69,11 @@ public sealed class AutoFilmRemoteReconciler
         var targetEntry = snapshot.GetFileSystemEntry(target.Path);
         if (targetEntry is not null && parent is not null)
         {
-            var resolvedTarget = Resolve(targetEntry, parent, snapshot);
+            var resolvedTarget = Resolve(
+                targetEntry,
+                parent,
+                snapshot,
+                target);
             if (resolvedTarget is not null && RequiresReplacement(target, resolvedTarget))
             {
                 var replacement = await ReplaceAsync(
@@ -128,7 +134,11 @@ public sealed class AutoFilmRemoteReconciler
                 continue;
             }
 
-            var resolved = Resolve(entry, currentParent, snapshot);
+            var resolved = Resolve(
+                entry,
+                currentParent,
+                snapshot,
+                current);
             if (resolved is null || !RequiresReplacement(current, resolved))
             {
                 continue;
@@ -151,13 +161,22 @@ public sealed class AutoFilmRemoteReconciler
     private BaseItem? Resolve(
         FileSystemMetadata entry,
         Folder parent,
-        AutoFilmDirectorySnapshot snapshot)
+        AutoFilmDirectorySnapshot snapshot,
+        BaseItem current)
     {
         return AutoFilmRemoteMovieResolver.ResolveEntry(
             entry,
             parent,
             snapshot,
-            _libraryManager);
+            _libraryManager,
+            ShouldPreserveMovieIdentity(current));
+    }
+
+    internal static bool ShouldPreserveMovieIdentity(BaseItem item)
+    {
+        return item is Movie
+            || (item is Video and not Episode
+                && item.ProviderIds.Count > 0);
     }
 
     private async Task<BaseItem> ReplaceAsync(

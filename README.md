@@ -96,6 +96,10 @@ parent returns a non-empty listing. Explicit movie scans can select one
 unambiguous primary video
 from a release directory containing a `Sample` folder or promotional videos;
 ambiguous multi-video directories retain Jellyfin's original representation.
+An existing identified Movie remains a Movie when a full rescan starts from
+its direct video inside a generic release wrapper. Exact video scans also read
+the containing OpenList directory once and synchronize matching external
+subtitle records from that same bounded result.
 Remote television refreshes resolve the owning Series before
 applying provider identifiers, even when a multi-season release adds an extra
 directory between the Series and its `S01`-style folders. Jellyfin then uses

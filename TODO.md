@@ -4,6 +4,10 @@ Updated: 2026-08-16
 
 ## Completed
 
+- [x] 2026-08-16: Preserve identified OpenList movies during exact full scans
+  under generic release wrappers, and synchronize matching external subtitle
+  records from the successfully enumerated containing directory.
+
 - [x] 2026-08-16: Validate importer-declared Movie/Series targets against the
   OpenList virtual folder and resolved logical item before persisting TMDB IDs
   or requesting provider metadata; manual scans retain library-type inference.

@@ -601,6 +601,7 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IAutoFilmOpenListClient, AutoFilmOpenListClient>();
             serviceCollection.AddSingleton<IAutoFilmRemoteLibraryRoots, AutoFilmRemoteLibraryRoots>();
             serviceCollection.AddSingleton<IAutoFilmSubtitleService, AutoFilmSubtitleService>();
+            serviceCollection.AddSingleton<AutoFilmRemoteSubtitleScanner>();
             serviceCollection.AddSingleton<AutoFilmRemoteReconciler>();
             serviceCollection.AddSingleton<IAutoFilmRemoteRefreshService, AutoFilmRemoteRefreshService>();
             serviceCollection.AddSingleton<IAutoFilmMediaReplacementService, AutoFilmMediaReplacementService>();

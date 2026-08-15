@@ -25,6 +25,12 @@ the direct video against the real movie-library parent instead of the
 provisional Series, so the stored item remains a Movie. Television libraries
 and normal Jellyfin scans retain upstream behavior.
 
+After a Movie has provider identifiers, an exact full scan preserves that
+Movie identity even when its persisted wrapper is an ordinary Folder without
+an inherited collection type. A generic Video without provider identifiers is
+not promoted by this rule, so samples, extras and ambiguous standalone files
+continue to use Jellyfin's normal resolver result.
+
 For one release directory, primary-video selection follows these rules:
 
 1. If exactly one direct child resolves as a Movie, use it even when other

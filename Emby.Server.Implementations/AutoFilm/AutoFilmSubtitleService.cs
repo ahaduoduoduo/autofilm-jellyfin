@@ -7,7 +7,6 @@ using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Persistence;
-using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -18,9 +17,6 @@ namespace Emby.Server.Implementations.AutoFilm;
 /// </summary>
 public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposable
 {
-    private static readonly string[] SupportedExtensions =
-        [".ass", ".idx", ".srt", ".ssa", ".sub", ".sup", ".vtt"];
-
     private readonly IAutoFilmOpenListClient _openListClient;
     private readonly ILibraryManager _libraryManager;
     private readonly IMediaStreamRepository _mediaStreamRepository;
@@ -74,7 +70,7 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
         if (!AutoFilmRemotePath.TryGetOpenListPath(
                 stream.Path,
                 out var remotePath)
-            || !IsSupportedSubtitle(remotePath))
+            || !AutoFilmExternalSubtitleStream.IsSupportedPath(remotePath))
         {
             if (IsRawSupRequest(stream, requestedFormat)
                 && File.Exists(stream.Path))
@@ -168,7 +164,7 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
 
         var normalizedFormat = format.Trim().TrimStart('.').ToLowerInvariant();
         var extension = "." + normalizedFormat;
-        if (!SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        if (!AutoFilmExternalSubtitleStream.IsSupportedPath("subtitle" + extension))
         {
             throw new ArgumentException($"Unsupported subtitle format: '{format}'.", nameof(format));
         }
@@ -230,20 +226,14 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
         var streamIndex = streams.Count == 0
             ? 0
             : streams.Max(stream => stream.Index) + 1;
-        var subtitleStream = new MediaStream
-        {
-            Type = MediaStreamType.Subtitle,
-            Index = streamIndex,
-            Codec = normalizedFormat,
-            Language = normalizedLanguage,
-            IsForced = isForced,
-            IsHearingImpaired = isHearingImpaired,
-            IsExternal = true,
-            IsExternalUrl = true,
-            SupportsExternalStream = true,
-            DeliveryMethod = SubtitleDeliveryMethod.External,
-            Path = AutoFilmRemotePath.FromOpenListPath(remotePath)
-        };
+        var subtitleStream = AutoFilmExternalSubtitleStream.Create(
+            AutoFilmRemotePath.FromOpenListPath(remotePath),
+            streamIndex,
+            normalizedLanguage,
+            null,
+            false,
+            isForced,
+            isHearingImpaired);
         _mediaStreamRepository.SaveMediaStreams(
             itemId,
             [.. streams, subtitleStream],
@@ -285,9 +275,4 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
         return true;
     }
 
-    private static bool IsSupportedSubtitle(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
-    }
 }

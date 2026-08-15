@@ -237,6 +237,81 @@ public sealed class AutoFilmRemoteMovieResolverTests
             CollectionType.movies), Times.Never);
     }
 
+    [Fact]
+    public void ResolveEntry_ExistingMovieIdentityInsideGenericWrapper_RemainsMovie()
+    {
+        const string moviePath = "/media/Our.Little.Sister.2015.mkv/Our.Little.Sister.2015.mkv";
+        var snapshot = new AutoFilmDirectorySnapshot();
+        snapshot.Add(new AutoFilmOpenListObject
+        {
+            Path = moviePath,
+            Name = "Our.Little.Sister.2015.mkv",
+            Size = 17_000_000_000
+        });
+        var entry = snapshot.GetFileSystemEntry(
+            AutoFilmRemotePath.FromOpenListPath(moviePath))!;
+        var wrapper = new Folder
+        {
+            Path = "openlist:///media/Our.Little.Sister.2015.mkv"
+        };
+        var library = new Mock<ILibraryManager>();
+        library
+            .Setup(instance => instance.GetContentType(wrapper))
+            .Returns((CollectionType?)null);
+        library
+            .Setup(instance => instance.GetVirtualFolders())
+            .Returns(
+            [
+                new VirtualFolderInfo
+                {
+                    CollectionType = CollectionTypeOptions.movies,
+                    Locations = ["openlist:///media"]
+                }
+            ]);
+        library
+            .Setup(instance => instance.ResolvePath(
+                entry,
+                wrapper,
+                snapshot,
+                (CollectionType?)null))
+            .Returns(new Video { Path = entry.FullName });
+        library
+            .Setup(instance => instance.ResolvePath(
+                entry,
+                wrapper,
+                snapshot,
+                CollectionType.movies))
+            .Returns(new Movie
+            {
+                Path = entry.FullName,
+                IsInMixedFolder = true
+            });
+
+        var result = AutoFilmRemoteMovieResolver.ResolveEntry(
+            entry,
+            wrapper,
+            snapshot,
+            library.Object,
+            preserveMovieIdentity: true);
+
+        var movie = Assert.IsType<Movie>(result);
+        Assert.False(movie.IsInMixedFolder);
+    }
+
+    [Fact]
+    public void ShouldPreserveMovieIdentity_OnlyPreservesIdentifiedStandaloneVideos()
+    {
+        var identifiedVideo = new Video();
+        identifiedVideo.ProviderIds[MetadataProvider.Tmdb.ToString()] = "315846";
+        var episode = new Episode();
+        episode.ProviderIds[MetadataProvider.Tmdb.ToString()] = "1";
+
+        Assert.True(AutoFilmRemoteReconciler.ShouldPreserveMovieIdentity(new Movie()));
+        Assert.True(AutoFilmRemoteReconciler.ShouldPreserveMovieIdentity(identifiedVideo));
+        Assert.False(AutoFilmRemoteReconciler.ShouldPreserveMovieIdentity(new Video()));
+        Assert.False(AutoFilmRemoteReconciler.ShouldPreserveMovieIdentity(episode));
+    }
+
     private static FileSystemMetadata Entry(string name, long length = 0)
     {
         return new FileSystemMetadata

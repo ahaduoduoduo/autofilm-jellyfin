@@ -1,6 +1,6 @@
 # AutoFilm module map
 
-Updated: 2026-08-14
+Updated: 2026-08-16
 
 The upstream Jellyfin structure remains intact. AutoFilm code is separated by
 responsibility:
@@ -34,6 +34,8 @@ responsibility:
     flag so OpenList reloads the exact parent directory before lookup.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmDirectorySnapshot.cs`
   - In-memory `IDirectoryService` snapshot used by normal Jellyfin resolvers.
+  - Records which directories returned a complete listing so destructive
+    database reconciliation never relies on a partial object set.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`
   - Creates or refreshes a bounded remote hierarchy through normal resolvers
     and metadata providers.
@@ -45,6 +47,8 @@ responsibility:
     without treating a partial or unavailable remote snapshot as deletion.
   - Removes an exact missing target during a full scan only after its refreshed
     OpenList parent returns a non-empty result.
+  - Lists an exact video's containing directory once so sidecar discovery uses
+    the same bounded OpenList response as item resolution.
   - Refreshes metadata for every discovered video and probes newly created
     videos through the serialized remote probe queue.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMovieResolver.cs`
@@ -56,6 +60,8 @@ responsibility:
     persisted OpenList directory does not inherit a collection type.
   - Ignores a provisional Series parent when an explicit movie scan receives a
     wrapper directory whose name ends in a video extension.
+  - Preserves an existing identified Movie when a full scan resolves its
+    direct video under a persisted generic wrapper.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
   - Runs only for an explicit full rescan after a fresh bounded snapshot was
     loaded successfully.
@@ -97,6 +103,14 @@ responsibility:
   - OpenList resolution, numbered new remote uploads, immediate stream
     insertion, stale stream removal, remote deletion, and raw local SUP
     delivery.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteSubtitleScanner.cs`
+  - Discovers matching sidecar subtitles from successfully enumerated OpenList
+    directories without downloading subtitle contents.
+  - Additive scans insert new records only; full scans can also remove stale
+    remote records from the same enumerated directory.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmExternalSubtitleStream.cs`
+  - Creates one common external-stream representation for uploaded and scanned
+    OpenList subtitles.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaSourceProvider.cs`
   - Dynamic HTTP direct-play source using existing Jellyfin media streams; a
     PlaybackInfo request also schedules repair when tracks or runtime are
@@ -172,5 +186,6 @@ Installation-specific database migration and legacy subtitle reverse lookup are
 absent from the maintained public branch and its module surface.
 
 Detailed configuration and behavior are in
-`docs/autofilm-remote-media.md`. Nested multi-season package behavior is in
+`docs/autofilm-remote-media.md`. Sidecar synchronization behavior is in
+`docs/autofilm-remote-subtitles.md`. Nested multi-season package behavior is in
 `docs/autofilm-remote-series.md`.

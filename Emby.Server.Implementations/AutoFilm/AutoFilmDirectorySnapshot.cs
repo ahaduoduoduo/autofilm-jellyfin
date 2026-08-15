@@ -15,6 +15,8 @@ internal sealed class AutoFilmDirectorySnapshot : IDirectoryService
 {
     private readonly Dictionary<string, FileSystemMetadata> _entries =
         new(StringComparer.Ordinal);
+    private readonly HashSet<string> _enumeratedDirectories =
+        new(StringComparer.Ordinal);
 
     /// <summary>
     /// Adds or replaces one OpenList object.
@@ -34,6 +36,26 @@ internal sealed class AutoFilmDirectorySnapshot : IDirectoryService
             CreationTimeUtc = NormalizeDate(obj.Created),
             LastWriteTimeUtc = NormalizeDate(obj.Modified)
         };
+    }
+
+    /// <summary>
+    /// Records that OpenList returned a complete listing for one directory.
+    /// </summary>
+    /// <param name="openListPath">Normalized OpenList absolute path.</param>
+    public void MarkDirectoryEnumerated(string openListPath)
+    {
+        _enumeratedDirectories.Add(
+            AutoFilmRemotePath.FromOpenListPath(openListPath));
+    }
+
+    /// <summary>
+    /// Gets whether one directory was explicitly listed for this snapshot.
+    /// </summary>
+    /// <param name="remotePath">OpenList URI.</param>
+    /// <returns>Whether the directory listing completed successfully.</returns>
+    public bool WasDirectoryEnumerated(string remotePath)
+    {
+        return _enumeratedDirectories.Contains(remotePath);
     }
 
     /// <inheritdoc />
