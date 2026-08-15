@@ -96,7 +96,12 @@ public sealed class AutoFilmRemoteSubtitleScanner
         NamingOptions namingOptions,
         bool removeMissing)
     {
-        var directory = video.ContainingFolderPath;
+        if (!AutoFilmRemotePath.IsRemote(video.Path))
+        {
+            return null;
+        }
+
+        var directory = GetParentPath(video.Path);
         if (!snapshot.WasDirectoryEnumerated(directory))
         {
             return null;
@@ -123,7 +128,8 @@ public sealed class AutoFilmRemoteSubtitleScanner
         var nextIndex = streams.Count == 0
             ? 0
             : streams.Max(stream => stream.Index) + 1;
-        var prefix = Path.GetFileNameWithoutExtension(video.Path);
+        var prefix = Path.GetFileNameWithoutExtension(
+            video.Path[(video.Path.LastIndexOf('/') + 1)..]);
         foreach (var file in snapshotFiles)
         {
             if (!TryParseSidecar(
