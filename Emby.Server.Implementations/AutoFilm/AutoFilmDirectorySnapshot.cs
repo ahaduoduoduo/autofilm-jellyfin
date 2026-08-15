@@ -15,6 +15,7 @@ internal sealed class AutoFilmDirectorySnapshot : IDirectoryService
 {
     private readonly Dictionary<string, FileSystemMetadata> _entries =
         new(StringComparer.Ordinal);
+
     private readonly HashSet<string> _enumeratedDirectories =
         new(StringComparer.Ordinal);
 

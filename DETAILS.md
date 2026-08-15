@@ -111,6 +111,9 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmExternalSubtitleStream.cs`
   - Creates one common external-stream representation for uploaded and scanned
     OpenList subtitles.
+- `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteSubtitleSyncResult.cs`
+  - Carries the immutable stream and subtitle-file update calculated for one
+    remote video.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteMediaSourceProvider.cs`
   - Dynamic HTTP direct-play source using existing Jellyfin media streams; a
     PlaybackInfo request also schedules repair when tracks or runtime are

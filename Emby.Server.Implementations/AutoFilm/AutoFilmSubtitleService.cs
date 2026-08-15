@@ -274,5 +274,4 @@ public sealed class AutoFilmSubtitleService : IAutoFilmSubtitleService, IDisposa
             cancellationToken);
         return true;
     }
-
 }

@@ -9,6 +9,7 @@ using Emby.Naming.ExternalFiles;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Persistence;
+using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
@@ -219,8 +220,3 @@ public sealed class AutoFilmRemoteSubtitleScanner
             : path[..separator];
     }
 }
-
-internal sealed record AutoFilmRemoteSubtitleSyncResult(
-    IReadOnlyList<MediaStream> Streams,
-    string[] SubtitleFiles,
-    bool Changed);
