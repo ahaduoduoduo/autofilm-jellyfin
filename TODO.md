@@ -4,6 +4,10 @@ Updated: 2026-08-16
 
 ## Completed
 
+- [x] 2026-08-16: Validate importer-declared Movie/Series targets against the
+  OpenList virtual folder and resolved logical item before persisting TMDB IDs
+  or requesting provider metadata; manual scans retain library-type inference.
+
 - [x] 2026-08-14: Detect OpenList videos with no embedded video stream or no
   runtime after metadata refresh and while producing PlaybackInfo, then queue
   only those items for serialized rate-limited media probing.

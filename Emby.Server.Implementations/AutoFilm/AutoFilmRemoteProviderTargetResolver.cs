@@ -19,6 +19,43 @@ namespace Emby.Server.Implementations.AutoFilm;
 internal static class AutoFilmRemoteProviderTargetResolver
 {
     /// <summary>
+    /// Ensures an explicit importer target matches the configured Jellyfin library.
+    /// </summary>
+    /// <param name="providerTarget">Normalized provider target.</param>
+    /// <param name="libraryRoot">Containing OpenList library root.</param>
+    /// <param name="libraryManager">Jellyfin library manager.</param>
+    internal static void ValidateLibrary(
+        string? providerTarget,
+        string libraryRoot,
+        ILibraryManager libraryManager)
+    {
+        if (providerTarget is null)
+        {
+            return;
+        }
+
+        var expectedType = string.Equals(
+            providerTarget,
+            AutoFilmRemoteProviderTarget.Movie,
+            StringComparison.Ordinal)
+            ? CollectionTypeOptions.movies
+            : CollectionTypeOptions.tvshows;
+        var actualType = libraryManager.GetVirtualFolders()
+            .Where(folder => folder.Locations.Any(location =>
+                AutoFilmRemotePath.TryGetOpenListPath(location, out var root)
+                && string.Equals(root, libraryRoot, StringComparison.Ordinal)))
+            .Select(folder => folder.CollectionType)
+            .FirstOrDefault();
+        if (actualType != expectedType)
+        {
+            throw new ArgumentException(
+                $"Provider target '{providerTarget}' does not match the configured "
+                + $"OpenList library type for '{libraryRoot}'.",
+                nameof(providerTarget));
+        }
+    }
+
+    /// <summary>
     /// Applies non-empty provider identifiers to the logical metadata target.
     /// </summary>
     /// <param name="item">Logical metadata target.</param>
@@ -56,10 +93,19 @@ internal static class AutoFilmRemoteProviderTargetResolver
         AutoFilmDirectorySnapshot snapshot,
         ILibraryManager libraryManager)
     {
+        if (string.Equals(
+                request.ProviderTarget,
+                AutoFilmRemoteProviderTarget.Series,
+                StringComparison.Ordinal))
+        {
+            return FindOwningSeries(resolvedItem, libraryManager)
+                ?? resolvedItem;
+        }
+
         if (!string.Equals(
                 request.ProviderTarget,
-                "movie",
-                StringComparison.OrdinalIgnoreCase))
+                AutoFilmRemoteProviderTarget.Movie,
+                StringComparison.Ordinal))
         {
             return FindOwningSeries(resolvedItem, libraryManager)
                 ?? resolvedItem;
@@ -100,6 +146,34 @@ internal static class AutoFilmRemoteProviderTargetResolver
         }
 
         return candidate.Item!;
+    }
+
+    /// <summary>
+    /// Rejects a resolved logical item whose type conflicts with an explicit importer target.
+    /// </summary>
+    /// <param name="item">Resolved logical metadata target.</param>
+    /// <param name="providerTarget">Normalized provider target.</param>
+    internal static void ValidateResolvedItem(
+        BaseItem item,
+        string? providerTarget)
+    {
+        if (providerTarget is null)
+        {
+            return;
+        }
+
+        var valid = string.Equals(
+            providerTarget,
+            AutoFilmRemoteProviderTarget.Movie,
+            StringComparison.Ordinal)
+            ? item is Movie
+            : item is Series;
+        if (!valid)
+        {
+            throw new InvalidOperationException(
+                $"Remote path resolved as '{item.GetType().Name}', but the importer "
+                + $"declared provider target '{providerTarget}'.");
+        }
     }
 
     /// <summary>

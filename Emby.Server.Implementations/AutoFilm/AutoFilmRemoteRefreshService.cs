@@ -59,6 +59,11 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        request = request with
+        {
+            ProviderTarget = AutoFilmRemoteProviderTarget.Normalize(
+                request.ProviderTarget)
+        };
         var scanMode = AutoFilmRemoteScanMode.Normalize(request.ScanMode);
         var fullScan = string.Equals(
             scanMode,
@@ -69,6 +74,10 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             ?? throw new ArgumentException(
                 "The remote path is outside the configured OpenList library roots.",
                 nameof(request));
+        AutoFilmRemoteProviderTargetResolver.ValidateLibrary(
+            request.ProviderTarget,
+            libraryRoot,
+            _libraryManager);
         var remotePath = AutoFilmRemotePath.FromOpenListPath(openListPath);
         var existing = _libraryManager.FindByPath(remotePath, null);
         var parent = FindNearestParent(openListPath, libraryRoot);
@@ -258,6 +267,9 @@ public sealed class AutoFilmRemoteRefreshService : IAutoFilmRemoteRefreshService
             request,
             snapshot,
             _libraryManager);
+        AutoFilmRemoteProviderTargetResolver.ValidateResolvedItem(
+            providerTarget,
+            request.ProviderTarget);
         var videos = importResult.Videos
             .Concat(resolvedItem is Video resolvedVideo
                 ? new[] { resolvedVideo }

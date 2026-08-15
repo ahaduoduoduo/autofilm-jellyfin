@@ -46,7 +46,9 @@ public sealed record AutoFilmRemoteRefreshRequest
     public IReadOnlyDictionary<string, string>? ProviderIds { get; init; }
 
     /// <summary>
-    /// Gets the media kind that should receive provider identifiers.
+    /// Gets the media kind that should receive provider identifiers. Supported
+    /// values are <c>movie</c> and <c>series</c>. A missing value keeps normal
+    /// Jellyfin library-type inference for manual scans.
     /// </summary>
     [JsonPropertyName("provider_target")]
     public string? ProviderTarget { get; init; }

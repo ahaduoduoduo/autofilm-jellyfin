@@ -37,7 +37,11 @@ For one release directory, primary-video selection follows these rules:
    editions.
 
 Provider identifiers from the refresh request are applied to the selected
-Movie. Provider-backed imports replace the scanner-derived release name with
+Movie. When a trusted importer declares `provider_target=movie`, Jellyfin first
+requires a movie virtual folder and a resolved Movie. A conflict is rejected
+before the TMDB ID is saved or provider metadata is requested. Manual scans do
+not send this field and continue to infer the type from the configured library.
+Provider-backed imports replace the scanner-derived release name with
 provider metadata while retaining existing images. A full remote rescan uses
 the same resolver to replace a previous
 `Folder + Video` representation while retaining provider identifiers, core

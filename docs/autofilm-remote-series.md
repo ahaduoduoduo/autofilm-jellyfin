@@ -16,7 +16,10 @@ The physical release directory is not a reliable metadata target. Jellyfin's
 normal resolver can initially classify a name containing `S01-S04` as a
 Season. A RemoteRefresh request therefore resolves the nearest owning Series
 through the persisted parent hierarchy before applying TMDB, TVDB, IMDb, or
-other provider identifiers.
+other provider identifiers. AutoFilm Core declares `provider_target=series`;
+Jellyfin verifies both the television virtual folder and the resolved Series
+before saving the supplied TMDB ID. Manual scans omit the declaration and use
+the normal library type.
 
 The request path remains the bounded OpenList enumeration target and keeps its
 existing recursive behavior. AutoFilm Core does not interpret the release

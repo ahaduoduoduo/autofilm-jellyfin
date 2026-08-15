@@ -64,7 +64,11 @@ When an administrator later uses Jellyfin's standard metadata refresh on an
 OpenList Movie or Episode that still has no embedded video stream record, the
 same queue repairs its media information without reprobeing healthy items.
 AutoFilm Core normally sends an explicit `RemoteRefresh` after a new-media
-download; Jellyfin does not poll. Existing-media upgrades use the separate
+download. Agent-created requests declare `movie` or `series` together with the
+TMDB ID. Jellyfin validates that declaration against the configured virtual
+folder and resolved logical item before saving provider IDs and requesting
+metadata. Manual scans omit the declaration and continue to use the configured
+library type. Jellyfin does not poll. Existing-media upgrades use the separate
 MediaReplacement API to keep the original Item ID and never run the new-item
 import or metadata-provider path.
 

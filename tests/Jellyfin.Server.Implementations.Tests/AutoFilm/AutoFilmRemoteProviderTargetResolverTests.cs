@@ -6,6 +6,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Entities;
 using Moq;
 using Xunit;
 
@@ -13,6 +14,53 @@ namespace Jellyfin.Server.Implementations.Tests.AutoFilm;
 
 public sealed class AutoFilmRemoteProviderTargetResolverTests
 {
+    [Theory]
+    [InlineData(AutoFilmRemoteProviderTarget.Movie, CollectionTypeOptions.movies)]
+    [InlineData(AutoFilmRemoteProviderTarget.Series, CollectionTypeOptions.tvshows)]
+    public void ValidateLibrary_MatchingRemoteLibrary_AcceptsTarget(
+        string providerTarget,
+        CollectionTypeOptions collectionType)
+    {
+        var libraryManager = new Mock<ILibraryManager>();
+        libraryManager
+            .Setup(instance => instance.GetVirtualFolders())
+            .Returns(
+            [
+                new VirtualFolderInfo
+                {
+                    CollectionType = collectionType,
+                    Locations = ["openlist:///115/nvideo"]
+                }
+            ]);
+
+        AutoFilmRemoteProviderTargetResolver.ValidateLibrary(
+            providerTarget,
+            "/115/nvideo",
+            libraryManager.Object);
+    }
+
+    [Fact]
+    public void ValidateLibrary_MismatchedRemoteLibrary_RejectsTarget()
+    {
+        var libraryManager = new Mock<ILibraryManager>();
+        libraryManager
+            .Setup(instance => instance.GetVirtualFolders())
+            .Returns(
+            [
+                new VirtualFolderInfo
+                {
+                    CollectionType = CollectionTypeOptions.tvshows,
+                    Locations = ["openlist:///115/nvideo"]
+                }
+            ]);
+
+        Assert.Throws<ArgumentException>(() =>
+            AutoFilmRemoteProviderTargetResolver.ValidateLibrary(
+                AutoFilmRemoteProviderTarget.Movie,
+                "/115/nvideo",
+                libraryManager.Object));
+    }
+
     [Fact]
     public void FindOwningSeries_SeriesTarget_ReturnsTarget()
     {
@@ -72,11 +120,27 @@ public sealed class AutoFilmRemoteProviderTargetResolverTests
 
         var result = AutoFilmRemoteProviderTargetResolver.Resolve(
             releaseSeason,
-            new AutoFilmRemoteRefreshRequest(),
+            new AutoFilmRemoteRefreshRequest
+            {
+                ProviderTarget = AutoFilmRemoteProviderTarget.Series
+            },
             new AutoFilmDirectorySnapshot(),
             libraryManager.Object);
 
         Assert.Same(series, result);
+    }
+
+    [Fact]
+    public void ValidateResolvedItem_MismatchedExplicitTarget_RejectsItem()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            AutoFilmRemoteProviderTargetResolver.ValidateResolvedItem(
+                new Episode(),
+                AutoFilmRemoteProviderTarget.Movie));
+        Assert.Throws<InvalidOperationException>(() =>
+            AutoFilmRemoteProviderTargetResolver.ValidateResolvedItem(
+                new Movie(),
+                AutoFilmRemoteProviderTarget.Series));
     }
 
     [Fact]

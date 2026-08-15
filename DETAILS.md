@@ -11,6 +11,8 @@ responsibility:
   - `AutoFilmRemotePath.cs` validates and converts `openlist:///` paths.
   - `AutoFilmRemoteScanMode.cs` validates the additive `new` and database
     reconciliation `full` modes.
+  - `AutoFilmRemoteProviderTarget.cs` validates optional `movie` and `series`
+    targets supplied by trusted importers.
   - `IAutoFilmRemoteLibraryRoots.cs` defines configured remote-root lookup.
   - `AutoFilmSubtitleCompatibility.cs` normalizes external SUP responses.
   - `IAutoFilmMediaReplacementService.cs` and
@@ -35,6 +37,9 @@ responsibility:
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteRefreshService.cs`
   - Creates or refreshes a bounded remote hierarchy through normal resolvers
     and metadata providers.
+  - Validates an explicit importer media type against the virtual folder and
+    resolved Movie/Series before saving provider IDs or requesting metadata;
+    requests without a type retain normal library inference.
   - Uses the same additive descendant importer for new and existing Jellyfin
     folders, including episode, season, and multi-season result directories,
     without treating a partial or unavailable remote snapshot as deletion.
