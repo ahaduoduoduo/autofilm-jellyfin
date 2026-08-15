@@ -1,6 +1,6 @@
 # AutoFilm development status
 
-Updated: 2026-08-14
+Updated: 2026-08-16
 
 ## Completed
 
@@ -127,6 +127,9 @@ Updated: 2026-08-14
 - [x] 2026-08-12: Read remote movie-library identity from Jellyfin virtual
   folders, persist wrapper-selected movies under their stored parent, and
   replace scanner release names during provider-backed movie imports.
+- [x] 2026-08-16: Keep explicitly scanned OpenList movie wrappers whose
+  directory names end in a video extension from being stored as Series and
+  Episode items.
 
 ## Planned
 

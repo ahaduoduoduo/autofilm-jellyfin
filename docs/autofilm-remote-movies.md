@@ -1,6 +1,6 @@
 # OpenList movie release directories
 
-Updated: 2026-08-12
+Updated: 2026-08-16
 
 AutoFilm scans one bounded OpenList path after an offline download succeeds.
 Movie releases commonly contain a wrapper directory with one primary video,
@@ -16,6 +16,14 @@ and other Jellyfin resolver calls retain upstream behavior.
 The library type comes from Jellyfin's virtual-folder configuration. This is
 also used when the persisted OpenList root and its descendants are ordinary
 `Folder` rows and therefore do not carry an inherited content type themselves.
+
+Some offline providers create a wrapper directory whose name itself ends in a
+video extension, for example `Movie.2015.2160p.mkv/Movie.2015.2160p.mkv`.
+Jellyfin's mixed-content television resolver can provisionally classify that
+wrapper as a Series. During an explicit movie-library scan, AutoFilm resolves
+the direct video against the real movie-library parent instead of the
+provisional Series, so the stored item remains a Movie. Television libraries
+and normal Jellyfin scans retain upstream behavior.
 
 For one release directory, primary-video selection follows these rules:
 

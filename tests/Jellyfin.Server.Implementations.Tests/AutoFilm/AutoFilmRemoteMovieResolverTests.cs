@@ -4,6 +4,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
@@ -152,6 +153,88 @@ public sealed class AutoFilmRemoteMovieResolverTests
         Assert.Equal(AutoFilmRemotePath.FromOpenListPath(moviePath), result.Path);
         Assert.Equal(directory.Name, result.Name);
         Assert.False(result.IsInMixedFolder);
+    }
+
+    [Fact]
+    public void ResolveEntry_MovieDirectoryNamedMkv_ReplacesTemporarySeries()
+    {
+        const string directoryPath = "/media/Our.Little.Sister.2015.2160p.mkv";
+        const string moviePath = directoryPath + "/Our.Little.Sister.2015.2160p.mkv";
+        var snapshot = new AutoFilmDirectorySnapshot();
+        snapshot.Add(new AutoFilmOpenListObject
+        {
+            Path = directoryPath,
+            Name = "Our.Little.Sister.2015.2160p.mkv",
+            IsDirectory = true
+        });
+        snapshot.Add(new AutoFilmOpenListObject
+        {
+            Path = moviePath,
+            Name = "Our.Little.Sister.2015.2160p.mkv",
+            Size = 17_000_000_000
+        });
+        var directory = snapshot.GetFileSystemEntry(
+            AutoFilmRemotePath.FromOpenListPath(directoryPath))!;
+        var parent = new Folder { Path = "openlist:///media" };
+        var temporarySeries = new Series
+        {
+            Path = directory.FullName,
+            Name = "Our Little Sister"
+        };
+        var library = new Mock<ILibraryManager>();
+        library
+            .Setup(instance => instance.GetContentType(parent))
+            .Returns((CollectionType?)null);
+        library
+            .Setup(instance => instance.GetLibraryOptions(parent))
+            .Returns(new LibraryOptions());
+        library
+            .Setup(instance => instance.GetVirtualFolders())
+            .Returns(
+            [
+                new VirtualFolderInfo
+                {
+                    CollectionType = CollectionTypeOptions.movies,
+                    Locations = ["openlist:///media"]
+                }
+            ]);
+        library
+            .Setup(instance => instance.ResolvePath(
+                directory,
+                parent,
+                snapshot,
+                (CollectionType?)null))
+            .Returns(temporarySeries);
+        library
+            .Setup(instance => instance.ResolvePath(
+                It.Is<FileSystemMetadata>(entry =>
+                    entry.FullName == AutoFilmRemotePath.FromOpenListPath(moviePath)),
+                parent,
+                snapshot,
+                CollectionType.movies))
+            .Returns(new Movie
+            {
+                Path = AutoFilmRemotePath.FromOpenListPath(moviePath),
+                Name = "Our.Little.Sister.2015.2160p",
+                IsInMixedFolder = true
+            });
+
+        var result = AutoFilmRemoteMovieResolver.ResolveEntry(
+            directory,
+            parent,
+            snapshot,
+            library.Object);
+
+        var movie = Assert.IsType<Movie>(result);
+        Assert.Equal(AutoFilmRemotePath.FromOpenListPath(moviePath), movie.Path);
+        Assert.Equal(directory.Name, movie.Name);
+        Assert.False(movie.IsInMixedFolder);
+        library.Verify(instance => instance.ResolvePath(
+            It.Is<FileSystemMetadata>(entry =>
+                entry.FullName == AutoFilmRemotePath.FromOpenListPath(moviePath)),
+            temporarySeries,
+            snapshot,
+            CollectionType.movies), Times.Never);
     }
 
     private static FileSystemMetadata Entry(string name, long length = 0)

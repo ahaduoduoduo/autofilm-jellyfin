@@ -49,6 +49,8 @@ responsibility:
     unique release-name match when promotional videos are present.
   - Reads the media type from Jellyfin's virtual-folder configuration when a
     persisted OpenList directory does not inherit a collection type.
+  - Ignores a provisional Series parent when an explicit movie scan receives a
+    wrapper directory whose name ends in a video extension.
 - `Emby.Server.Implementations/AutoFilm/AutoFilmRemoteReconciler.cs`
   - Runs only for an explicit full rescan after a fresh bounded snapshot was
     loaded successfully.

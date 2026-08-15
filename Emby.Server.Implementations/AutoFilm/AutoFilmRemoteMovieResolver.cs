@@ -7,6 +7,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.AutoFilm;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
@@ -102,6 +103,14 @@ internal static class AutoFilmRemoteMovieResolver
             return null;
         }
 
+        // Jellyfin's mixed-content SeriesResolver tests the containing directory
+        // path as a video path while inspecting its children. A real directory
+        // whose name ends in a video extension can therefore be returned as a
+        // temporary Series. Do not let that provisional type make the direct
+        // child resolve as an Episode during an explicit movie-library scan.
+        var candidateParent = releaseFolder is Series
+            ? libraryParent
+            : releaseFolder;
         var candidates = snapshot.GetFileSystemEntries(directoryEntry.FullName)
             .Where(entry => !entry.IsDirectory)
             .Select(entry => new
@@ -109,7 +118,7 @@ internal static class AutoFilmRemoteMovieResolver
                 Entry = entry,
                 Item = libraryManager.ResolvePath(
                     entry,
-                    releaseFolder,
+                    candidateParent,
                     snapshot,
                     CollectionType.movies) as Movie
             })
